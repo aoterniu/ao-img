@@ -96,10 +96,10 @@ a{color:var(--ac);text-decoration:none}
 .r-item .sav{color:#f59e0b;font-weight:600}
 
 /* 最近上传 */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
-.thumb{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;position:relative;aspect-ratio:1;background:var(--light);transition:all .2s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;min-height:100px;will-change:contents}
+.thumb{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;position:relative;aspect-ratio:1;background:var(--light);transition:all .2s;contain-intrinsic-size:90px 90px}
 .thumb:hover{border-color:var(--ac);box-shadow:0 2px 8px rgba(16,185,129,.15)}
-.thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;gap:4px;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
 .thumb:hover .overlay{opacity:1}
 .thumb .overlay button{padding:5px 8px;font-size:.72rem;border:none;border-radius:4px;cursor:pointer;font-weight:600}
@@ -125,7 +125,7 @@ a{color:var(--ac);text-decoration:none}
 /* Lightbox */
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;display:none;justify-content:center;align-items:center;cursor:pointer;backdrop-filter:blur(4px)}
 .lb.show{display:flex}
-.lb img,.lb video{max-width:92vw;max-height:92vh;border-radius:8px}
+.lb img,.lb video{max-width:92vw;max-height:92vh;border-radius:8px;contain-intrinsic-size:600px 400px}
 
 /* 公告 */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;justify-content:center;align-items:center;backdrop-filter:blur(2px)}
@@ -191,7 +191,24 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
       </div>
       <div class="pwd-input" id="pwdIn"><input type="password" id="pwdVal" placeholder="设置访问密码（可选）"></div>
 
-      <div id="cf-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAADqQBQHA_8AbrwlR" data-theme="light" style="margin-top:12px;display:none"></div>
+      <div id="cf-turnstile" style="height:0;overflow:hidden;margin:0;padding:0"></div>
+      <script>
+        // Turnstile: 非交互式验证，不渲染可见 Widget，避免 CLS
+        window.turnstileCallback = function(token) {
+          const el = document.getElementById('cf-turnstile');
+          if (el) el.dataset.token = token;
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+          if (window.turnstile) {
+            turnstile.render('#cf-turnstile', {
+              sitekey: '0x4AAAAAADqQBQHA_8AbrwlR',
+              callback: window.turnstileCallback,
+              'error-callback': function() { console.log('Turnstile error'); },
+              appearance: 'execute'
+            });
+          }
+        });
+      </script>
 
       <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
       <div class="status" id="status"></div>
@@ -281,7 +298,7 @@ async function urlUpload(){
   fill.style.width='20%';results.style.display='block';results.innerHTML='';
   const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
   try{
-    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd,cf_turnstile:document.querySelector('[name=cf-turnstile-response]')?.value||''})});
+    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd,cf_turnstile:document.getElementById('cf-turnstile')?.dataset?.token||''})});
     const d=await r.json();fill.style.width='100%';
     if(d.url){results.innerHTML+=card(d);status.textContent='上传完成';$('#urlIn').value=''}
     else{results.innerHTML+='<div style="color:#dc2626;padding:12px">'+d.error+'</div>';status.textContent='失败'}
@@ -327,7 +344,7 @@ async function doUpload(files){
     let dim=null;
     if(isImg(f)){dim=await getImgDim(f)}
     const fd=new FormData();fd.append('file',f);fd.append('format',$('#fmt').value);fd.append('quality',$('#qlt').value);if(pwd)fd.append('password',pwd);
-    const tkn=document.querySelector('[name=cf-turnstile-response]')?.value;if(tkn)fd.append('cf-turnstile',tkn);
+    const tkn=document.getElementById('cf-turnstile')?.dataset?.token;if(tkn)fd.append('cf-turnstile',tkn);
     try{
       const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();
       if(j.url){if(dim&&dim.w)j.dim=dim.w+'×'+dim.h;results.innerHTML+=card(j)}
