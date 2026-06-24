@@ -2,8 +2,8 @@
  * ao 图床 v6 — R2 + KV + 视频/ZIP/图片 + 扩展插件
  * 对标 img.scdn.io 完整功能
  */
-const WECHAT_QR='https://img.aoterniu.online/i/58JTFpGE.webp';
-const ALIPAY_QR='https://img.aoterniu.online/i/EZeXSESc.webp';
+const WECHAT_QR='https://img.aoterniu.online/i/ehuCGYeh.jpg';
+const ALIPAY_QR='https://img.aoterniu.online/i/t1aSBbzN.jpg';
 
 const PAGE=`<!DOCTYPE html>
 <html lang="zh-CN">
