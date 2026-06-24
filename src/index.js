@@ -78,14 +78,19 @@ a{color:var(--ac);text-decoration:none}
 
 /* 结果 */
 .results{display:none;margin-top:14px}
-.r-item{background:var(--light);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:10px}
-.r-item .row{display:flex;gap:5px;margin-bottom:5px;align-items:center}
-.r-item .row label{font-size:.72rem;color:var(--sub);width:60px;flex-shrink:0;text-align:right}
-.r-item .row input{flex:1;border:1px solid var(--bdr);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:'SF Mono','JetBrains Mono',monospace;background:#fff}
-.r-item .row .cpy{padding:6px 12px;background:var(--ac);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.74rem;font-weight:600;white-space:nowrap;transition:all .12s}
-.r-item .row .cpy:active{transform:scale(.95)}.r-item .row .cpy.ok{background:#34d399}
-.r-item .meta{font-size:.75rem;color:var(--sub);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap}
-.r-item .meta span{display:flex;align-items:center;gap:4px}
+.r-item{background:var(--light);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.r-item .top{display:flex;gap:16px;margin-bottom:14px}
+.r-item .top .preview{width:200px;height:180px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--bdr);cursor:pointer;flex-shrink:0}
+.r-item .top .info{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.r-item .top .info .line{font-size:.88rem;color:var(--text);display:flex;gap:6px}
+.r-item .top .info .line b{color:var(--sub);font-weight:500;flex-shrink:0}
+.r-item .top .info .success{font-size:.92rem;font-weight:600;color:var(--ac);display:flex;align-items:center;gap:6px}
+.r-item .links{display:flex;flex-direction:column;gap:5px}
+.r-item .links .row{display:flex;gap:5px;align-items:center}
+.r-item .links .row label{font-size:.72rem;color:var(--sub);width:60px;flex-shrink:0;text-align:right}
+.r-item .links .row input{flex:1;border:1px solid var(--bdr);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:'SF Mono','JetBrains Mono',monospace;background:#fff}
+.r-item .links .row .cpy{padding:6px 12px;background:var(--ac);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.74rem;font-weight:600;white-space:nowrap;transition:all .12s}
+.r-item .links .row .cpy:active{transform:scale(.95)}.r-item .links .row .cpy.ok{background:#34d399}
 .r-item .dim{color:#10b981;font-weight:600}
 .r-item .sav{color:#f59e0b;font-weight:600}
 
@@ -103,9 +108,11 @@ a{color:var(--ac);text-decoration:none}
 .empty{text-align:center;padding:32px;color:var(--sub);font-size:.85rem}
 
 /* 捐助（适中） */
-.donate .qr-row{display:flex;justify-content:center;gap:24px}
-.donate .qr-box img{width:108px;height:108px;border-radius:8px;border:1px solid var(--bdr)}
-.donate .qr-box .ql{font-size:.76rem;color:var(--sub);margin-top:5px}
+.donate .qr-row{display:flex;justify-content:center;gap:36px}
+.donate .qr-box img{width:180px;height:180px;border-radius:10px;border:1px solid var(--bdr);transition:transform .2s;cursor:pointer}
+.donate .qr-box img:hover{transform:scale(1.05)}
+.donate .qr-box .ql{font-size:.82rem;color:var(--sub);margin-top:8px;font-weight:500}
+.donate .footer-text{font-size:.82rem;color:var(--sub);margin-top:14px}
 
 /* 关于 */
 .about{padding:20px;font-size:.85rem;color:var(--sub);line-height:1.7}
@@ -174,7 +181,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
 
       <div class="opts">
         <div class="opt"><label>图片存储:</label><select disabled><option>默认</option></select></div>
-        <div class="opt"><label>输出格式:</label><select id="fmt"><option value="original">自动（推荐）</option><option value="webp">WebP</option><option value="png">PNG</option><option value="jpg">JPG</option></select><span class="hint">图片 ≤100MB · 视频 ≤15MB</span></div>
+        <div class="opt"><label>输出格式:</label><select id="fmt"><option value="original">自动（推荐）- WebP 优先，体积最小</option><option value="preserve">保留原格式 - 不做转换</option><option value="webp">WebP - 体积最小，压缩率高</option><option value="jpg">JPG - 兼容性最好，照片适用</option><option value="png">PNG - 支持透明，无损质量</option></select></div>
         <div class="opt"><label>质量:</label><select id="qlt"><option value="100">无损</option><option value="90" selected>90%</option><option value="80">80%</option><option value="70">70%</option></select></div>
         <label class="chk"><input type="checkbox" id="pwdChk" onchange="$('#pwdIn').style.display=this.checked?'':'none'"> 需要密码访问</label>
       </div>
@@ -194,11 +201,12 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
   <div class="card" id="donate">
     <div class="card-hd">☕ 支持作者</div>
     <div class="card-bd donate">
-      <p style="font-size:.85rem;color:var(--sub);text-align:center;margin-bottom:12px">如果 ao 图床对你有帮助，请作者喝杯咖啡</p>
+      <p style="font-size:.9rem;color:var(--text);text-align:center;margin-bottom:4px;font-weight:500">如果 ao 图床帮到了你，欢迎请作者喝杯咖啡</p>
       <div class="qr-row">
         <div class="qr-box"><img src="${WECHAT_QR}" alt="微信" loading="lazy"><div class="ql">微信赞赏</div></div>
         <div class="qr-box"><img src="${ALIPAY_QR}" alt="支付宝" loading="lazy"><div class="ql">支付宝赞赏</div></div>
       </div>
+      <p class="footer-text" style="text-align:center">你的支持是持续更新的最大动力 ❤️</p>
     </div>
   </div>
 
@@ -342,18 +350,27 @@ function card(d){
   const sz=d.size<1024?d.size+'B':d.size<1048576?(d.size/1024).toFixed(1)+'KB':(d.size/1048576).toFixed(1)+'MB';
   const fmt=(d.originalName||'').split('.').pop().toUpperCase()||'IMG';
   const isVideo=fmt==='MP4'||fmt==='WEBM';
-  const dimStr=d.dim?'<span class="dim">📐 '+d.dim+'</span>':'';
-  const savStr=d.savings?'<span class="sav">📉 已节省 '+d.savings+'</span>':'';
+  const dimLine=d.dim?'<div class="line"><b>尺　寸：</b>'+d.dim+'</div>':'';
+  const savLine=d.savings?'<div class="line"><b>压缩率：</b>已节省 <span class="sav">'+d.savings+'</span> ✨</div>':'';
+  const pwdLine=d.protected?'<div class="line"><b>保　护：</b>🔒 密码访问</div>':'';
+  const previewTag=isVideo?'<video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video>':'<img class="preview" src="'+d.url+'" onclick="showLB(this.src)">';
   const md=isVideo?'[video]('+d.url+')':'![]('+d.url+')';
   const html=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+d.url+'" alt="'+d.key+'">';
   const bb=isVideo?'[video]'+d.url+'[/video]':'[IMG]'+d.url+'[/IMG]';
-  const pwdInfo=d.protected?'<span>🔒 密码保护</span>':'';
   return '<div class="r-item">'+
-    '<div class="row"><label>直链</label><input value="'+d.url+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-    '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-    '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-    '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-    '<div class="meta">'+dimStr+'<span>📦 '+sz+'</span><span>📄 '+fmt+'</span>'+savStr+pwdInfo+'<span>'+d.key+'</span></div></div>';
+    '<div class="success">✅ 上传成功</div>'+
+    '<div class="top">'+previewTag+
+      '<div class="info">'+
+        '<div class="line"><b>文件名：</b>'+d.key+'</div>'+
+        '<div class="line"><b>大　小：</b>'+sz+'</div>'+
+        '<div class="line"><b>格　式：</b>'+fmt+'</div>'+dimLine+savLine+pwdLine+
+      '</div></div>'+
+    '<div class="links">'+
+      '<div class="row"><label>直链</label><input value="'+d.url+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+    '</div></div>';
 }
 
 function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
@@ -513,7 +530,7 @@ export default{
           file={stream:()=>f.stream(),type:f.type||'image/png',size:f.size,ext};origSize=f.size;
         }
         let ext=file.ext||'.png',ct2=file.type;
-        if(format==='webp'){ext='.webp';ct2='image/webp'}else if(format==='png'){ext='.png';ct2='image/png'}else if(format==='jpg'){ext='.jpg';ct2='image/jpeg'}
+        if(format==='webp'){ext='.webp';ct2='image/webp'}else if(format==='png'){ext='.png';ct2='image/png'}else if(format==='jpg'){ext='.jpg';ct2='image/jpeg'}else if(format==='preserve'){/* 保留原格式 */}
         const key=randKey(ext);
         const meta={originalName:origName,uploadedAt:new Date().toISOString(),format,protected:password?'true':''};
         if(password)meta.password=password;
