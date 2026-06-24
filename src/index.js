@@ -511,6 +511,106 @@ footer a{color:var(--sub)}footer a:hover{color:var(--ac)}
 <footer><a href="/">首页</a> · <a href="/api">API文档</a> · <a href="/extensions">扩展</a> · <a href="https://blog.aoterniu.online" target="_blank">技术笔记</a> · <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub</a><br>ao 图床 · img.aoterniu.online · © 2026</footer>
 </body></html>`;
 
+const MANAGE_PAGE=`<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ao 图床 - 图片管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+:root{--ac:#10b981;--ac2:#059669;--card:#fff;--bdr:#e5e7eb;--sub:#6b7280;--light:#f9fafb;--r:12px}
+a{color:var(--ac);text-decoration:none}
+.navbar{background:#fff;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;padding:0 24px}
+.navbar .logo{font-size:1.1rem;font-weight:700;color:var(--ac)}
+.navbar .nav{margin-left:auto;display:flex;gap:20px;font-size:.88rem}
+.navbar .nav a{color:var(--sub);font-weight:500;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s}
+.navbar .nav a:hover,.navbar .nav a.on{color:var(--ac);border-bottom-color:var(--ac)}
+.main{max-width:960px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:1.5rem;margin-bottom:16px}
+.toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:200px;border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:.9rem;outline:none}
+.toolbar input:focus{border-color:var(--ac)}
+.toolbar button{padding:10px 18px;background:var(--ac);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.88rem}
+.toolbar button:active{transform:scale(.97)}
+.info-bar{font-size:.82rem;color:var(--sub);margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.info-bar .badge{background:#ecfdf5;color:var(--ac);padding:3px 10px;border-radius:99px;font-size:.78rem;font-weight:600}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.mgrid .item{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;aspect-ratio:1;background:var(--light);position:relative;transition:all .2s}
+.mgrid .item:hover{border-color:var(--ac)}
+.mgrid .item img,.mgrid .item video{width:100%;height:100%;object-fit:cover;display:block}
+.mgrid .item .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;gap:6px;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.mgrid .item:hover .overlay{opacity:1}
+.mgrid .item .overlay button{padding:6px 10px;font-size:.72rem;border:none;border-radius:4px;cursor:pointer;font-weight:600}
+.mgrid .item .overlay .ov-copy{background:var(--ac);color:#fff}
+.mgrid .item .overlay .ov-del{background:#ef4444;color:#fff}
+.mgrid .item .overlay .ov-prev{background:#3b82f6;color:#fff}
+.mgrid .item .badge-vid{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.65rem;padding:2px 6px;border-radius:4px}
+.mgrid .item .badge-pwd{position:absolute;top:6px;left:6px;font-size:.8rem}
+.mgrid .item .badge-size{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:.65rem;padding:2px 6px;text-align:center}
+.empty{text-align:center;padding:48px;color:var(--sub)}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;display:none;justify-content:center;align-items:center;cursor:pointer;backdrop-filter:blur(4px)}
+.lb.show{display:flex}
+.lb img{max-width:92vw;max-height:92vh;border-radius:8px}
+.lb video{max-width:92vw;max-height:92vh;border-radius:8px}
+.pager{display:flex;justify-content:center;gap:6px;margin-top:20px}
+.pager button{padding:6px 14px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+.pager button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.pager button:disabled{opacity:.4;cursor:default}
+footer{text-align:center;padding:24px;color:var(--sub);font-size:.78rem;border-top:1px solid var(--bdr)}
+footer a{color:var(--sub)}footer a:hover{color:var(--ac)}
+</style></head>
+<body>
+<nav class="navbar"><div class="logo">ao 图床</div><div class="nav"><a href="/">上传</a><a href="/api">API文档</a><a href="/extensions">扩展</a><a href="https://blog.aoterniu.online" target="_blank">博客</a></div></nav>
+<div class="main">
+<h1>图片管理</h1>
+<div class="toolbar">
+  <input type="text" id="search" placeholder="搜索文件名..." onkeydown="if(event.key==='Enter')doSearch()">
+  <button onclick="doSearch()">搜索</button>
+</div>
+<div class="info-bar"><span id="info">加载中...</span><span class="badge" id="sBadge"></span></div>
+<div class="mgrid" id="grid"></div>
+<div class="pager" id="pager"></div>
+</div>
+<footer><a href="/">首页</a> · <a href="/api">API文档</a> · <a href="/extensions">扩展</a> · <a href="https://blog.aoterniu.online" target="_blank">技术笔记</a> · <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub</a><br>ao 图床 · img.aoterniu.online · © 2026</footer>
+<div class="lb" id="lb" onclick="this.classList.remove('show');$('#lb video')?.pause()"><img id="lbImg"><video id="lbVid" controls></video></div>
+<script>
+let page=0,allFiles=[];
+const $=s=>document.querySelector(s);
+async function load(){try{const r=await fetch('/list?all=1');const d=await r.json();allFiles=d.files||[];$('#sBadge').textContent=allFiles.length+' 个文件';render()}catch(e){$('#info').textContent='加载失败，请检查网络'}}
+function render(){
+  const q=$('#search').value.toLowerCase();
+  const filtered=q?allFiles.filter(f=>f.key.toLowerCase().includes(q)):allFiles;
+  const per=50,total=Math.ceil(filtered.length/per),pg=Math.min(page,Math.max(0,total-1));
+  const start=page*per,slice=filtered.slice(start,start+per);
+  $('#info').textContent='共 '+filtered.length+' 个文件'+(q?' · 搜索: '+q:'');
+  if(!slice.length){$('#grid').innerHTML='<div class="empty">暂无文件</div>';$('#pager').innerHTML='';return}
+  $('#grid').innerHTML=slice.map(f=>{
+    const isV=f.key.match(/\.(mp4|webm)$/i);const isP=!!f.protected;
+    const inner=isV?'<video src="'+f.url+'" muted></video>':'<img src="'+f.url+'" loading="lazy">';
+    const lbCall=isV?'showLB(\\''+f.url+'\\',true)':'showLB(\\''+f.url+'\\')';
+    const sz=f.size<1024?f.size+'B':f.size<1048576?(f.size/1024).toFixed(1)+'KB':(f.size/1048576).toFixed(1)+'MB';
+    return '<div class="item" title="'+f.key+'">'+inner+
+      (isV?'<div class="badge-vid">视频</div>':'')+(isP?'<div class="badge-pwd">🔒</div>':'')+
+      '<div class="badge-size">'+sz+'</div>'+
+      '<div class="overlay"><button class="ov-prev" onclick="event.stopPropagation();'+lbCall+'">👁</button>'+
+      '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\\''+f.url+'\\');this.textContent=\\'✓\\';setTimeout(()=>this.textContent=\\'📋\\',800)">📋</button>'+
+      '<button class="ov-del" onclick="event.stopPropagation();delI(\\''+f.key+'\\',this.closest(\\'.item\\'))">✕</button></div></div>';
+  }).join('');
+  if(total<=1){$('#pager').innerHTML='';return}
+  let p='';
+  p+='<button '+(page===0?'disabled':'')+' onclick="page=0;render()">首页</button>';
+  p+='<button '+(page===0?'disabled':'')+' onclick="page--;render()">«</button>';
+  p+='<button class="on">'+(pg+1)+'/'+total+'</button>';
+  p+='<button '+(pg>=total-1?'disabled':'')+' onclick="page++;render()">»</button>';
+  p+='<button '+(pg>=total-1?'disabled':'')+' onclick="page='+(total-1)+';render()">末页</button>';
+  $('#pager').innerHTML=p;
+}
+function doSearch(){page=0;render()}
+function showLB(src,isVid){const img=$('#lbImg'),vid=$('#lbVid');if(isVid){img.style.display='none';vid.style.display='';vid.src=src}else{vid.style.display='none';img.style.display='';img.src=src}$('#lb').classList.add('show')}
+async function delI(k,el){if(!confirm('确认删除 '+k+' ?'))return;try{await fetch('/i/'+k,{method:'DELETE'});el.style.opacity='0';setTimeout(()=>{el.remove();allFiles=allFiles.filter(f=>f.key!==k);render()},300)}catch(e){}}
+load();
+</script></body></html>`;
+
 function cors(o){return{'Access-Control-Allow-Origin':o||'*','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type'}}
 function randKey(e){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';let id='';for(let i=0;i<8;i++)id+=c[Math.floor(Math.random()*c.length)];return id+e}
 async function updateStats(env,size){try{const t=parseInt(await env.STATS.get('total')||'0')+1;const day=new Date().toISOString().slice(0,10);const tc=parseInt(await env.STATS.get('day_'+day)||'0')+1;const ts=parseInt(await env.STATS.get('totalSize')||'0')+size;await Promise.all([env.STATS.put('total',String(t)),env.STATS.put('day_'+day,String(tc)),env.STATS.put('totalSize',String(ts))])}catch(e){}}
@@ -522,6 +622,7 @@ export default{
 
     if(url.pathname==='/'&&request.method==='GET')return new Response(PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
     if(url.pathname==='/extensions'&&request.method==='GET')return new Response(EXTENSIONS_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
+    if(url.pathname==='/manage'&&request.method==='GET')return new Response(MANAGE_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
     if(url.pathname==='/api'&&request.method==='GET')return new Response(API_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
 
     // PWA
