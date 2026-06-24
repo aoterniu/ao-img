@@ -1,5 +1,5 @@
 /**
- * ao 图床 v5 — R2 + KV + 视频/ZIP/图片
+ * ao 图床 v6 — R2 + KV + 视频/ZIP/图片 + 扩展插件
  * 对标 img.scdn.io 完整功能
  */
 const WECHAT_QR='https://img.aoterniu.online/i/58JTFpGE.webp';
@@ -139,7 +139,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
   <div class="nav">
     <a href="/" class="on">上传</a>
     <a href="/api">API文档</a>
-    <a href="/manage">管理</a>
+    <a href="/extensions">扩展</a>
     <a href="https://blog.aoterniu.online" target="_blank">博客</a>
     <a href="#donate">捐助</a>
   </div>
@@ -187,7 +187,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
   </div>
 
   <div class="card" id="recentCard" style="display:none">
-    <div class="card-hd">📁 最近上传<div class="acts"><a href="/manage">查看全部</a></div></div>
+    <div class="card-hd">📁 最近上传<div class="acts"><a href="/extensions">扩展</a></div></div>
     <div class="card-bd"><div class="grid" id="thumbs"></div></div>
   </div>
 
@@ -216,7 +216,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
 
 <footer>
   <div class="links">
-    <a href="/">首页</a><a href="/api">API文档</a><a href="/manage">管理</a>
+    <a href="/">首页</a><a href="/api">API文档</a><a href="/extensions">扩展</a>
     <a href="https://blog.aoterniu.online" target="_blank">技术笔记</a>
     <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub</a>
   </div>
@@ -230,7 +230,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
     <button class="close" onclick="closeModal()">&times;</button>
     <h2>📢 更新公告</h2>
     <p><strong>ao 图床 v5.0</strong> 已上线！</p>
-    <p>✅ 图片 + 短视频 + ZIP 批量上传<br>✅ 密码保护访问<br>✅ 图片管理页面<br>✅ 格式转换 & 质量压缩<br>✅ 图片尺寸 & 压缩率显示<br>✅ PWA 可安装到桌面</p>
+    <p>✅ 图片 + 短视频 + ZIP 批量上传<br>✅ 密码保护访问<br>✅ 浏览器扩展 & WordPress 插件<br>✅ 格式转换 & 质量压缩<br>✅ 图片尺寸 & 压缩率显示<br>✅ PWA 可安装到桌面</p>
     <button class="ok-btn" onclick="closeModal()">我知道了</button>
   </div>
 </div>
@@ -395,100 +395,80 @@ loadRecent();loadStats();
 </body>
 </html>`;
 
-const MANAGE_PAGE=`<!DOCTYPE html>
+const EXTENSIONS_PAGE=`<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ao 图床 - 图片管理</title>
+<title>ao 图床 - 扩展与插件</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;color:#333}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;color:#333;min-height:100vh;display:flex;flex-direction:column}
 :root{--ac:#10b981;--ac2:#059669;--card:#fff;--bdr:#e5e7eb;--sub:#6b7280;--light:#f9fafb;--r:12px}
 a{color:var(--ac);text-decoration:none}
 .navbar{background:#fff;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;padding:0 24px}
 .navbar .logo{font-size:1.1rem;font-weight:700;color:var(--ac)}
 .navbar .nav{margin-left:auto;display:flex;gap:20px;font-size:.88rem}
-.navbar .nav a{color:var(--sub);font-weight:500;padding:4px 0;border-bottom:2px solid transparent}.navbar .nav a:hover,.navbar .nav a.on{color:var(--ac);border-bottom-color:var(--ac)}
-.main{max-width:960px;margin:0 auto;padding:24px 20px 60px}
-h1{font-size:1.5rem;margin-bottom:16px}
-.toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-.toolbar input{flex:1;min-width:200px;border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:.9rem;outline:none}.toolbar input:focus{border-color:var(--ac)}
-.toolbar button{padding:10px 18px;background:var(--ac);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.88rem}
-.info-bar{font-size:.82rem;color:var(--sub);margin-bottom:14px;display:flex;align-items:center;gap:12px}
-.info-bar .badge{background:#ecfdf5;color:var(--ac);padding:3px 10px;border-radius:99px;font-size:.78rem;font-weight:600}
-.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
-.mgrid .item{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;aspect-ratio:1;background:var(--light);position:relative;transition:all .2s}
-.mgrid .item:hover{border-color:var(--ac)}
-.mgrid .item img,.mgrid .item video{width:100%;height:100%;object-fit:cover}
-.mgrid .item .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;gap:6px;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
-.mgrid .item:hover .overlay{opacity:1}
-.mgrid .item .overlay button{padding:6px 10px;font-size:.72rem;border:none;border-radius:4px;cursor:pointer;font-weight:600}
-.mgrid .item .overlay .ov-copy{background:var(--ac);color:#fff}
-.mgrid .item .overlay .ov-del{background:#ef4444;color:#fff}
-.mgrid .item .overlay .ov-prev{background:#3b82f6;color:#fff}
-.mgrid .item .badge-vid{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;font-size:.65rem;padding:2px 6px;border-radius:4px}
-.mgrid .item .badge-pwd{position:absolute;top:6px;left:6px;font-size:.8rem}
-.empty{text-align:center;padding:48px;color:var(--sub)}
-.lb{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;display:none;justify-content:center;align-items:center;cursor:pointer;backdrop-filter:blur(4px)}
-.lb.show{display:flex}
-.lb img{max-width:92vw;max-height:92vh;border-radius:8px}
-.lb video{max-width:92vw;max-height:92vh;border-radius:8px}
-.pager{display:flex;justify-content:center;gap:6px;margin-top:20px}
-.pager button{padding:6px 14px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
-.pager button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
-.pager button:disabled{opacity:.4;cursor:default}
-footer{text-align:center;padding:24px;color:var(--sub);font-size:.78rem;border-top:1px solid var(--bdr)}
+.navbar .nav a{color:var(--sub);font-weight:500;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s}
+.navbar .nav a:hover,.navbar .nav a.on{color:var(--ac);border-bottom-color:var(--ac)}
+.hero{background:linear-gradient(180deg,#ecfdf5 0%,var(--light) 100%);padding:48px 20px 32px;text-align:center}
+.hero h1{font-size:2rem;font-weight:700;color:var(--text)}
+.hero p{margin-top:10px;color:var(--sub);font-size:1.1rem;max-width:600px;margin-left:auto;margin-right:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:24px;max-width:960px;margin:0 auto;padding:20px 20px 60px;width:100%}
+.ext-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px;transition:box-shadow .2s,transform .2s}
+.ext-card:hover{box-shadow:0 8px 30px rgba(0,0,0,.08);transform:translateY(-2px)}
+.ext-card .hd{display:flex;align-items:center;gap:12px}
+.ext-card .icon{width:48px;height:48px;background:linear-gradient(135deg,var(--ac),#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ext-card .icon svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2}
+.ext-card .hd h2{font-size:1.2rem;font-weight:700;color:var(--text)}
+.ext-card .hd .badge{display:block;font-size:.72rem;background:#ecfdf5;color:var(--ac);padding:2px 10px;border-radius:20px;margin-top:3px;width:fit-content}
+.ext-card h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--sub);margin-top:4px}
+.ext-card .features{list-style:none;display:flex;flex-direction:column;gap:6px}
+.ext-card .features li{display:flex;align-items:flex-start;gap:8px;font-size:.92rem;line-height:1.5}
+.ext-card .features li::before{content:"✓";color:var(--ac);font-weight:700;flex-shrink:0;margin-top:1px}
+.ext-card .install{background:var(--light);border:1px solid var(--bdr);border-radius:8px;padding:12px 14px;font-size:.85rem;color:var(--sub);line-height:1.6}
+.ext-card .install strong{color:var(--text)}
+.ext-card .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;background:var(--ac);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:all .15s;text-decoration:none;width:fit-content}
+.ext-card .btn:hover{background:var(--ac2);color:#fff}
+.ext-card .btn:active{transform:scale(.97)}
+footer{text-align:center;padding:24px;color:var(--sub);font-size:.78rem;border-top:1px solid var(--bdr);margin-top:auto}
+footer a{color:var(--sub)}footer a:hover{color:var(--ac)}
+@media(max-width:500px){.grid{grid-template-columns:1fr}.hero h1{font-size:1.6rem}}
 </style></head>
 <body>
-<nav class="navbar"><div class="logo">ao 图床</div><div class="nav"><a href="/">上传</a><a href="/api">API文档</a><a href="/manage" class="on">管理</a><a href="https://blog.aoterniu.online" target="_blank">博客</a></div></nav>
-<div class="main">
-<h1>图片管理</h1>
-<div class="toolbar">
-  <input type="text" id="search" placeholder="搜索文件名..." onkeydown="if(event.key==='Enter')doSearch()">
-  <button onclick="doSearch()">搜索</button>
+<nav class="navbar"><div class="logo">ao 图床</div><div class="nav"><a href="/">上传</a><a href="/api">API文档</a><a href="/extensions" class="on">扩展</a><a href="https://blog.aoterniu.online" target="_blank">博客</a></div></nav>
+<div class="hero">
+  <h1>扩展与插件</h1>
+  <p>官方开发的工具，旨在让您的图片上传与管理流程更加顺畅、高效。</p>
 </div>
-<div class="info-bar"><span id="info">加载中...</span><span class="badge" id="sBadge"></span></div>
-<div class="mgrid" id="grid"></div>
-<div class="pager" id="pager"></div>
+<div class="grid">
+  <div class="ext-card">
+    <div class="hd"><div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><ellipse cx="12" cy="12" rx="4" ry="10"/></svg></div><div><h2>浏览器扩展</h2><span class="badge">Chrome / Edge</span></div></div>
+    <h3>核心功能</h3>
+    <ul class="features">
+      <li>右键快速上传：在任何网页上右键点击图片，即可快速上传到图床</li>
+      <li>拖拽上传：拖动网页图片到扩展图标，即刻上传</li>
+      <li>截图后自动上传并复制链接</li>
+      <li>历史记录：方便地查看、搜索、复制和删除您最近上传的图片</li>
+    </ul>
+    <h3>安装指南</h3>
+    <div class="install"><strong>安装指南：</strong>下载 .zip 文件后，在浏览器扩展管理页面开启"开发者模式"，然后直接拖拽 zip 文件到浏览器扩展管理页面即可。</div>
+    <a class="btn" href="https://github.com/aoterniu/ao-img/releases" target="_blank">⬇ 下载浏览器扩展</a>
+  </div>
+  <div class="ext-card">
+    <div class="hd"><div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><h2>WordPress 插件</h2><span class="badge">WP 5.0+</span></div></div>
+    <h3>核心功能</h3>
+    <ul class="features">
+      <li>自动上传：上传到媒体库的图片将自动同步至本图床</li>
+      <li>URL 替换：自动将文章中的图片链接替换为图床外链</li>
+      <li>设置简单：没有多余的设置，直接使用</li>
+      <li>兼容性强：支持站点上的任意位置上传图片和编辑器的粘贴图片</li>
+    </ul>
+    <h3>安装指南</h3>
+    <div class="install"><strong>安装指南：</strong>在 WordPress 后台"安装插件"页面，上传 .zip 文件并启用。如遇到启用插件提示指定文件不存在则直接将 zip 文件解压至 <code>wp-content/plugins</code> 插件目录下再启用。</div>
+    <a class="btn" href="https://github.com/aoterniu/ao-img/releases" target="_blank">⬇ 下载 WordPress 插件</a>
+  </div>
 </div>
-<footer>ao 图床 · <a href="/">返回首页</a></footer>
-<div class="lb" id="lb" onclick="this.classList.remove('show');$('#lb video')?.pause()"><img id="lbImg"><video id="lbVid" controls></video></div>
-<script>
-let page=0,allFiles=[];
-const $=s=>document.querySelector(s);
-async function load(){try{const r=await fetch('/list?all=1');const d=await r.json();allFiles=d.files||[];$('#sBadge').textContent=allFiles.length+' 个文件';render()}catch(e){$('#info').textContent='加载失败'}}
-function render(){
-  const q=$('#search').value.toLowerCase();
-  const filtered=q?allFiles.filter(f=>f.key.toLowerCase().includes(q)):allFiles;
-  const per=50,total=Math.ceil(filtered.length/per),pg=Math.min(page,Math.max(0,total-1));
-  const start=page*per,slice=filtered.slice(start,start+per);
-  $('#info').textContent='共 '+filtered.length+' 个文件'+(q?' · 搜索: '+q:'');
-  if(!slice.length){$('#grid').innerHTML='<div class="empty">暂无文件</div>';$('#pager').innerHTML='';return}
-  $('#grid').innerHTML=slice.map(f=>{
-    const isV=f.key.match(/\.(mp4|webm)$/i);
-    const isP=!!f.protected;
-    const inner=isV?'<video src="'+f.url+'" muted></video>':'<img src="'+f.url+'" loading="lazy">';
-    const lbCall=isV?'showLB(\\''+f.url+'\\',true)':'showLB(\\''+f.url+'\\')';
-    return '<div class="item" title="'+f.key+'">'+inner+
-      (isV?'<div class="badge-vid">视频</div>':'')+
-      (isP?'<div class="badge-pwd">🔒</div>':'')+
-      '<div class="overlay"><button class="ov-prev" onclick="event.stopPropagation();'+lbCall+'">👁</button>'+
-      '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\\''+f.url+'\\');this.textContent=\\'✓\\';setTimeout(()=>this.textContent=\\'📋\\',800)">📋</button>'+
-      '<button class="ov-del" onclick="event.stopPropagation();delI(\\''+f.key+'\\',this.closest(\\'.item\\'))">✕</button></div></div>';
-  }).join('');
-  if(total<=1){$('#pager').innerHTML='';return}
-  let p='';
-  p+='<button '+(page===0?'disabled':'')+' onclick="page=0;render()">首页</button>';
-  p+='<button '+(page===0?'disabled':'')+' onclick="page--;render()">«</button>';
-  p+='<button class="on">'+(pg+1)+'/'+total+'</button>';
-  p+='<button '+(pg>=total-1?'disabled':'')+' onclick="page++;render()">»</button>';
-  p+='<button '+(pg>=total-1?'disabled':'')+' onclick="page='+(total-1)+';render()">末页</button>';
-  $('#pager').innerHTML=p;
-}
-function doSearch(){page=0;render()}
-function showLB(src,isVid){const img=$('#lbImg'),vid=$('#lbVid');if(isVid){img.style.display='none';vid.style.display='';vid.src=src}else{vid.style.display='none';img.style.display='';img.src=src}$('#lb').classList.add('show')}
-async function delI(k,el){if(!confirm('删除 '+k+' ?'))return;try{await fetch('/i/'+k,{method:'DELETE'});el.style.opacity='0';setTimeout(()=>{el.remove();allFiles=allFiles.filter(f=>f.key!==k);render()},300)}catch(e){}}
-load();
-</script></body></html>`;
+<footer><a href="/">首页</a> · <a href="/api">API文档</a> · <a href="/extensions">扩展</a> · <a href="https://blog.aoterniu.online" target="_blank">技术笔记</a> · <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub</a><br>ao 图床 · img.aoterniu.online · © 2026</footer>
+</body></html>`;
 
 function cors(o){return{'Access-Control-Allow-Origin':o||'*','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type'}}
 function randKey(e){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';let id='';for(let i=0;i<8;i++)id+=c[Math.floor(Math.random()*c.length)];return id+e}
@@ -500,7 +480,7 @@ export default{
     if(request.method==='OPTIONS')return new Response(null,{headers:cors(o)});
 
     if(url.pathname==='/'&&request.method==='GET')return new Response(PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
-    if(url.pathname==='/manage'&&request.method==='GET')return new Response(MANAGE_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
+    if(url.pathname==='/extensions'&&request.method==='GET')return new Response(EXTENSIONS_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
     if(url.pathname==='/api'&&request.method==='GET')return new Response(API_PAGE,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache',...cors(o)}});
 
     // PWA
