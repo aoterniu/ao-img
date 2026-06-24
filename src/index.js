@@ -10,6 +10,7 @@ const PAGE=`<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#10b981">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <title>ao 图床 - 简单、快速、免费的图床</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -107,12 +108,15 @@ a{color:var(--ac);text-decoration:none}
 .thumb .overlay .ov-prev{background:#3b82f6;color:#fff}
 .empty{text-align:center;padding:32px;color:var(--sub);font-size:.85rem}
 
-/* 捐助（适中） */
-.donate .qr-row{display:flex;justify-content:center;gap:36px}
-.donate .qr-box img{width:180px;height:180px;border-radius:10px;border:1px solid var(--bdr);transition:transform .2s;cursor:pointer}
-.donate .qr-box img:hover{transform:scale(1.05)}
-.donate .qr-box .ql{font-size:.82rem;color:var(--sub);margin-top:8px;font-weight:500}
-.donate .footer-text{font-size:.82rem;color:var(--sub);margin-top:14px}
+/* 捐助 */
+.donate .qr-row{display:flex;justify-content:center;gap:40px;padding:8px 0}
+.donate .qr-box{text-align:center}
+.donate .qr-box img{width:180px;height:180px;border-radius:12px;border:1px solid var(--bdr);transition:transform .2s,box-shadow .2s;cursor:pointer}
+.donate .qr-box img:hover{transform:scale(1.03);box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.donate .qr-box.wc img{background:#f0fdf4}
+.donate .qr-box.alipay img{background:#eff6ff}
+.donate .qr-box .ql{font-size:.82rem;color:var(--sub);margin-top:10px;font-weight:500}
+.donate .footer-text{font-size:.85rem;color:var(--sub);margin-top:16px;text-align:center}
 
 /* 关于 */
 .about{padding:20px;font-size:.85rem;color:var(--sub);line-height:1.7}
@@ -187,6 +191,8 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
       </div>
       <div class="pwd-input" id="pwdIn"><input type="password" id="pwdVal" placeholder="设置访问密码（可选）"></div>
 
+      <div id="cf-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAADqQBQHA_8AbrwlR" data-theme="light" style="margin-top:12px;display:none"></div>
+
       <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
       <div class="status" id="status"></div>
       <div class="results" id="results"></div>
@@ -203,8 +209,8 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
     <div class="card-bd donate">
       <p style="font-size:.9rem;color:var(--text);text-align:center;margin-bottom:4px;font-weight:500">如果 ao 图床帮到了你，欢迎请作者喝杯咖啡</p>
       <div class="qr-row">
-        <div class="qr-box"><img src="${WECHAT_QR}" alt="微信" loading="lazy"><div class="ql">微信赞赏</div></div>
-        <div class="qr-box"><img src="${ALIPAY_QR}" alt="支付宝" loading="lazy"><div class="ql">支付宝赞赏</div></div>
+        <div class="qr-box wc"><img src="${WECHAT_QR}" alt="微信" loading="lazy"><div class="ql">微信赞赏</div></div>
+        <div class="qr-box alipay"><img src="${ALIPAY_QR}" alt="支付宝" loading="lazy"><div class="ql">支付宝赞赏</div></div>
       </div>
       <p class="footer-text" style="text-align:center">你的支持是持续更新的最大动力 ❤️</p>
     </div>
@@ -275,7 +281,7 @@ async function urlUpload(){
   fill.style.width='20%';results.style.display='block';results.innerHTML='';
   const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
   try{
-    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd})});
+    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd,cf_turnstile:document.querySelector('[name=cf-turnstile-response]')?.value||''})});
     const d=await r.json();fill.style.width='100%';
     if(d.url){results.innerHTML+=card(d);status.textContent='上传完成';$('#urlIn').value=''}
     else{results.innerHTML+='<div style="color:#dc2626;padding:12px">'+d.error+'</div>';status.textContent='失败'}
@@ -321,6 +327,7 @@ async function doUpload(files){
     let dim=null;
     if(isImg(f)){dim=await getImgDim(f)}
     const fd=new FormData();fd.append('file',f);fd.append('format',$('#fmt').value);fd.append('quality',$('#qlt').value);if(pwd)fd.append('password',pwd);
+    const tkn=document.querySelector('[name=cf-turnstile-response]')?.value;if(tkn)fd.append('cf-turnstile',tkn);
     try{
       const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();
       if(j.url){if(dim&&dim.w)j.dim=dim.w+'×'+dim.h;results.innerHTML+=card(j)}
@@ -507,11 +514,11 @@ export default{
     if(url.pathname==='/upload'&&request.method==='POST'){
       try{
         let file,origName='';const ct=request.headers.get('Content-Type')||'';
-        let format='original',quality='100',password='',origSize=0;
+        let format='original',quality='100',password='',origSize=0,turnstileToken='';
         if(ct.includes('application/json')){
           const b=await request.json();if(!b.url)return Response.json({error:'请提供 URL'},{status:400,headers:cors(o)});
-          format=b.format||'original';quality=b.quality||'100';password=b.password||'';
-          const resp=await fetch(b.url,{headers:{'User-Agent':'ao-img/5.0'},redirect:'follow'});
+          format=b.format||'original';quality=b.quality||'100';password=b.password||'';turnstileToken=b.cf_turnstile||'';
+          const resp=await fetch(b.url,{headers:{'User-Agent':'ao-img/6.0'},redirect:'follow'});
           if(!resp.ok)return Response.json({error:'下载失败: '+resp.status},{status:400,headers:cors(o)});
           const ic=resp.headers.get('Content-Type')||'';
           if(!ic.startsWith('image/')&&!ic.startsWith('video/'))return Response.json({error:'URL 不是图片或视频'},{status:400,headers:cors(o)});
@@ -520,7 +527,7 @@ export default{
           const ext=origName.includes('.')?'.'+origName.split('.').pop().split('?')[0]:'.png';
           file={stream:()=>resp.body,type:ic,size:origSize,ext};
         }else{
-          const fd=await request.formData();const f=fd.get('file');format=fd.get('format')||'original';quality=fd.get('quality')||'100';password=fd.get('password')||'';
+          const fd=await request.formData();const f=fd.get('file');format=fd.get('format')||'original';quality=fd.get('quality')||'100';password=fd.get('password')||'';turnstileToken=fd.get('cf-turnstile')||'';
           if(!f)return Response.json({error:'请选择文件'},{status:400,headers:cors(o)});
           const isVid=f.type.startsWith('video/');
           if(!f.type.startsWith('image/')&&!isVid&&!f.name?.endsWith('.zip'))return Response.json({error:'不支持的格式'},{status:400,headers:cors(o)});
@@ -529,6 +536,12 @@ export default{
           origName=f.name||'';const ext=origName?'.'+origName.split('.').pop():'.png';
           file={stream:()=>f.stream(),type:f.type||'image/png',size:f.size,ext};origSize=f.size;
         }
+        // Turnstile 验证（如果配置了 secret key）
+        if(env.TURNSTILE_SECRET&&turnstileToken){
+          const tv=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`secret=${env.TURNSTILE_SECRET}&response=${turnstileToken}`});
+          const tr=await tv.json();if(!tr.success)return Response.json({error:'验证失败，请重试'},{status:403,headers:cors(o)});
+        }
+
         let ext=file.ext||'.png',ct2=file.type;
         if(format==='webp'){ext='.webp';ct2='image/webp'}else if(format==='png'){ext='.png';ct2='image/png'}else if(format==='jpg'){ext='.jpg';ct2='image/jpeg'}else if(format==='preserve'){/* 保留原格式 */}
         const key=randKey(ext);
