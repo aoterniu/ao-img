@@ -102,15 +102,15 @@ input[type=file]{display:none}
 .r-item .links .row input{flex:1;border:1px solid var(--bdr);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:'SF Mono','JetBrains Mono',monospace;background:#fff}
 .r-item .links .row .cpy{padding:6px 12px;background:var(--ac);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.74rem;font-weight:600;white-space:nowrap;transition:all .12s}
 .r-item .links .row .cpy:active{transform:scale(.95)}.r-item .links .row .cpy.ok{background:#34d399}
-.r-item .links .dl-btn{display:flex;align-items:center;gap:6px;margin-top:8px;padding:10px 18px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;width:fit-content;transition:all .15s}
-.r-item .links .dl-btn:hover{opacity:.9;transform:translateY(-1px)}
+.r-item .links .btn-row{display:flex;gap:12px;margin-top:8px;justify-content:flex-end}
+.r-item .links .dl-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;height:36px;background:var(--ac);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .15s}
+.r-item .links .dl-btn:hover{background:var(--ac2);transform:translateY(-1px)}
 .r-item .links .dl-btn:active{transform:scale(.97)}
-.r-item .links .dl-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
-.r-item .links .btn-row{display:flex;gap:10px;margin-top:8px}
-.r-item .links .del-btn{display:flex;align-items:center;gap:6px;padding:10px 18px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;width:fit-content;transition:all .15s}
-.r-item .links .del-btn:hover{opacity:.9;transform:translateY(-1px)}
+.r-item .links .dl-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2}
+.r-item .links .del-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;height:36px;background:transparent;color:var(--sub);border:1px solid var(--bdr);border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .15s}
+.r-item .links .del-btn:hover{color:#ef4444;border-color:#ef4444;background:#fef2f2}
 .r-item .links .del-btn:active{transform:scale(.97)}
-.r-item .links .del-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.r-item .links .del-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
 .r-item .dim{color:#10b981;font-weight:600}
 .r-item .sav{color:#f59e0b;font-weight:600}
 
@@ -237,7 +237,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
   </div>
 
   <div class="card" id="recentCard" style="display:none">
-    <div class="card-hd">📁 最近上传<div class="acts"><a href="/extensions">扩展</a></div></div>
+    <div class="card-hd">📁 最近上传</div>
     <div class="card-bd"><div class="grid" id="thumbs"></div></div>
   </div>
 
@@ -491,10 +491,18 @@ function card(d){
 function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
 function dlImg(url,filename){const a=document.createElement('a');a.href=url+'?dl=1';a.download=filename;a.click()}
 function delCard(key,el){
-  if(!confirm('确认删除 '+key+' ?'))return;
+  const btn=el.closest('.del-btn');
+  if(!btn.dataset.confirm){
+    btn.dataset.confirm='1';
+    btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 确认删除？';
+    btn.style.color='#ef4444';btn.style.borderColor='#ef4444';btn.style.background='#fef2f2';
+    setTimeout(()=>{delete btn.dataset.confirm;btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 删除';btn.style.cssText=''},3000);
+    return;
+  }
   fetch('/i/'+key,{method:'DELETE'}).then(()=>{
-    el.closest('.r-item').style.opacity='0';
-    setTimeout(()=>el.closest('.r-item').remove(),300);
+    const card=btn.closest('.r-item');
+    card.style.opacity='0';card.style.transform='scale(0.95)';
+    setTimeout(()=>card.remove(),300);
   }).catch(()=>alert('删除失败'));
 }
 
@@ -528,7 +536,7 @@ async function loadRecent(){
         return '<div class="thumb" title="'+f.key+'" ondblclick="'+lbCall+'">'+thumb+'<div class="overlay">'+
           '<button class="ov-prev" onclick="event.stopPropagation();'+lbCall+'">👁</button>'+
           '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\\''+f.url+'\\');this.textContent=\\'✓\\';setTimeout(()=>this.textContent=\\'📋\\',800)">📋</button>'+
-          '<button class="ov-del" onclick="event.stopPropagation();delImg(\\''+f.key+'\\',this.closest(\\'.thumb\\'))">✕</button></div></div>';
+        '</div></div>';
       }).join('');
     }else{$('#recentCard').style.display='none'}
   }catch(e){$('#recentCard').style.display='none'}
