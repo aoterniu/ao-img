@@ -1,0 +1,16 @@
+name = "ao-img"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+workers_dev = false
+
+routes = [
+  { pattern = "img.aoterniu.online/*", zone_name = "aoterniu.online" }
+]
+
+[[r2_buckets]]
+binding = "IMG"
+bucket_name = "ao-images"
+
+[[kv_namespaces]]
+binding = "STATS"
+id = "ff82df4e39aa43eba3c7006d32a7fd61"
