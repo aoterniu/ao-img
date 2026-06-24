@@ -458,8 +458,8 @@ function card(d){
   const savLine=d.savings?'<div class="line"><b>压缩率：</b>已节省 <span class="sav">'+d.savings+'</span> ✨</div>':'';
   const pwdLine=d.protected?'<div class="line"><b>保　护：</b>🔒 密码访问</div>':'';
   const previewTag=isVideo
-    ?'<div class="preview-wrap"><video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video><button class="dl-preview" onclick="event.stopPropagation();dlImg(\''+d.url+'\',\''+d.key+'\')" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>'
-    :'<div class="preview-wrap"><img class="preview" src="'+d.url+'" onclick="showLB(this.src)"><button class="dl-preview" onclick="event.stopPropagation();dlImg(\''+d.url+'\',\''+d.key+'\')" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>';
+    ?'<div class="preview-wrap"><video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>'
+    :'<div class="preview-wrap"><img class="preview" src="'+d.url+'" onclick="showLB(this.src)"><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>';
   const md=isVideo?'[video]('+d.url+')':'![]('+d.url+')';
   const html=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+d.url+'" alt="'+d.key+'">';
   const bb=isVideo?'[video]'+d.url+'[/video]':'[IMG]'+d.url+'[/IMG]';
@@ -476,12 +476,21 @@ function card(d){
       '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-      '<button class="dl-btn" onclick="dlImg(\''+d.url+'\',\''+d.key+'\')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
+      '<button class="dl-btn" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
     '</div></div>';
 }
 
 function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
 function dlImg(url,filename){const a=document.createElement('a');a.href=url+'?dl=1';a.download=filename;a.click()}
+
+// 事件委托：下载按钮
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('.dl-preview,.dl-btn');
+  if(btn&&btn.dataset.dlUrl){
+    e.stopPropagation();
+    dlImg(btn.dataset.dlUrl,btn.dataset.dlKey);
+  }
+});
 
 function showLB(src,isVid){
   const img=$('#lbImg'),vid=$('#lbVid');
