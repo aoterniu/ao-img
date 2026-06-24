@@ -185,7 +185,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
 <div class="main">
   <div class="card">
     <div class="card-bd">
-      <div class="drop" id="drop" onclick="fi.click()">
+      <div class="drop" id="drop">
         <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 32V16m0 0l-8 8m8-8l8 8" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="6" width="36" height="36" rx="6" stroke-dasharray="4 3"/></svg>
         <div class="t1">点击选择文件、拖拽到这里或直接粘贴（支持图片、短视频、ZIP批量）</div>
       </div>
@@ -294,22 +294,23 @@ drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('acti
 drop.addEventListener('dragleave',()=>drop.classList.remove('active'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('active');doUpload(e.dataTransfer.files)});
 
-// 文件选择 - 自动上传（兼容性处理）
-fi.addEventListener('change',function(e){
-  const files=e.target.files;
-  if(files&&files.length>0){
-    showSelectedFiles(files);
-    setTimeout(()=>doUpload(files),100);
-    e.target.value='';
-  }
-});
-fi.addEventListener('input',function(e){
-  const files=e.target.files;
-  if(files&&files.length>0){
-    showSelectedFiles(files);
-    setTimeout(()=>doUpload(files),100);
-    e.target.value='';
-  }
+// 文件选择 - 自动上传（多重兼容性处理）
+function handleFileSelect(e){
+  try{
+    const files=e.target.files||e.dataTransfer?.files;
+    if(!files||files.length===0)return;
+    const fileList=Array.from(files);
+    showSelectedFiles(fileList);
+    doUpload(fileList);
+    if(e.target)e.target.value='';
+  }catch(err){console.error('文件选择错误:',err)}
+}
+fi.addEventListener('change',handleFileSelect);
+fi.addEventListener('input',handleFileSelect);
+// 防止 drop 区域的点击事件冒泡到 fi
+drop.addEventListener('click',function(e){
+  if(e.target===fi)return;
+  fi.click();
 });
 
 // 显示选中的文件
@@ -372,16 +373,17 @@ async function urlUpload(){
   loadRecent();loadStats();
 }
 
-// 上传
+// 上传（带错误捕获）
 async function doUpload(files){
-  if(!files.length)return;
-  const isZip=f=>f.name&&f.name.endsWith('.zip');
-  const isVid=f=>f.type.startsWith('video/')||f.name.match(/\.(mp4|webm)$/i);
-  const isImg=f=>f.type.startsWith('image/')||f.name.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+  if(!files||!files.length)return;
+  try{
+    const isZip=f=>f.name&&f.name.endsWith('.zip');
+    const isVid=f=>f.type?.startsWith('video/')||f.name?.match(/\.(mp4|webm)$/i);
+    const isImg=f=>f.type?.startsWith('image/')||f.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
 
-  bar.style.display='block';status.style.display='block';results.style.display='block';
-  let d=0,t=files.length;const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
-  status.innerHTML='<span class="spin"></span>准备上传...';status.style.color='';
+    bar.style.display='block';status.style.display='block';results.style.display='block';
+    let d=0,t=files.length;const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
+    status.innerHTML='<span class="spin"></span>准备上传...';status.style.color='';
   // ZIP 处理
   for(const f of files){
     if(!isZip(f))continue;
@@ -424,6 +426,14 @@ async function doUpload(files){
   setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
   $('#selFiles').classList.remove('show');
   loadRecent();loadStats()
+  }catch(err){
+    console.error('上传错误:',err);
+    bar.style.display='block';status.style.display='block';
+    status.textContent='上传失败: '+err.message;status.style.color='#dc2626';
+    results.style.display='block';
+    results.innerHTML='<div style="color:#dc2626;padding:12px">上传失败，请重试</div>';
+    setTimeout(()=>{bar.style.display='none';status.style.display='none'},3000);
+  }
 }
 
 // ZIP 解压
