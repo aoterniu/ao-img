@@ -50,6 +50,12 @@ a{color:var(--ac);text-decoration:none}
 .drop svg{width:44px;height:44px;color:var(--ac)}
 .drop .t1{margin-top:12px;font-size:.95rem;color:var(--text)}
 .drop .t2{margin-top:4px;font-size:.8rem;color:var(--sub)}
+input[type=file]{display:none}
+.selected-files{margin-top:10px;font-size:.82rem;color:var(--sub);display:none;padding:8px 12px;background:var(--light);border-radius:6px;border:1px solid var(--bdr)}
+.selected-files.show{display:block}
+.selected-files .file-item{display:flex;align-items:center;gap:6px;padding:4px 0}
+.selected-files .file-item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selected-files .file-item .size{color:var(--ac);font-weight:500;flex-shrink:0}
 
 /* URL输入 */
 .url-row{display:flex;gap:8px;margin-top:14px}
@@ -184,6 +190,7 @@ footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:va
         <div class="t1">点击选择文件、拖拽到这里或直接粘贴（支持图片、短视频、ZIP批量）</div>
       </div>
       <input type="file" id="fi" accept="image/*,video/mp4,video/webm,.zip" multiple>
+      <div class="selected-files" id="selFiles"></div>
 
       <div class="url-row">
         <input type="text" id="urlIn" placeholder="粘贴图片 URL" onkeydown="if(event.key==='Enter')urlUpload()">
@@ -286,7 +293,36 @@ function closeModal(){$('#modal').classList.remove('show');localStorage.setItem(
 drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('active')});
 drop.addEventListener('dragleave',()=>drop.classList.remove('active'));
 drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('active');doUpload(e.dataTransfer.files)});
-fi.addEventListener('change',e=>doUpload(e.target.files));
+
+// 文件选择 - 自动上传（兼容性处理）
+fi.addEventListener('change',function(e){
+  const files=e.target.files;
+  if(files&&files.length>0){
+    showSelectedFiles(files);
+    setTimeout(()=>doUpload(files),100);
+    e.target.value='';
+  }
+});
+fi.addEventListener('input',function(e){
+  const files=e.target.files;
+  if(files&&files.length>0){
+    showSelectedFiles(files);
+    setTimeout(()=>doUpload(files),100);
+    e.target.value='';
+  }
+});
+
+// 显示选中的文件
+function showSelectedFiles(files){
+  const el=$('#selFiles');
+  if(!files.length){el.classList.remove('show');return}
+  let html='';
+  for(const f of files){
+    const sz=f.size<1024?f.size+'B':f.size<1048576?(f.size/1024).toFixed(1)+'KB':(f.size/1048576).toFixed(1)+'MB';
+    html+='<div class="file-item"><span class="name">📄 '+f.name+'</span><span class="size">'+sz+'</span></div>';
+  }
+  el.innerHTML=html;el.classList.add('show');
+}
 document.addEventListener('paste',e=>{const it=e.clipboardData?.items;if(!it)return;const fs=[];for(const i of it)if(i.type.startsWith('image/'))fs.push(i.getAsFile());if(fs.length)doUpload(fs)});
 
 // 获取图片尺寸
