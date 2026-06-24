@@ -14,3 +14,8 @@ bucket_name = "ao-images"
 [[kv_namespaces]]
 binding = "STATS"
 id = "ff82df4e39aa43eba3c7006d32a7fd61"
+
+[[d1_databases]]
+binding = "META"
+database_name = "ao-img-meta"
+database_id = "141d7b93-6d41-49e8-b8de-60daa0eb259e"
