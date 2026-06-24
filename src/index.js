@@ -106,6 +106,11 @@ input[type=file]{display:none}
 .r-item .links .dl-btn:hover{opacity:.9;transform:translateY(-1px)}
 .r-item .links .dl-btn:active{transform:scale(.97)}
 .r-item .links .dl-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+.r-item .links .btn-row{display:flex;gap:10px;margin-top:8px}
+.r-item .links .del-btn{display:flex;align-items:center;gap:6px;padding:10px 18px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;width:fit-content;transition:all .15s}
+.r-item .links .del-btn:hover{opacity:.9;transform:translateY(-1px)}
+.r-item .links .del-btn:active{transform:scale(.97)}
+.r-item .links .del-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
 .r-item .dim{color:#10b981;font-weight:600}
 .r-item .sav{color:#f59e0b;font-weight:600}
 
@@ -476,20 +481,29 @@ function card(d){
       '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
-      '<button class="dl-btn" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
+      '<div class="btn-row">'+
+        '<button class="dl-btn" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
+        '<button class="del-btn" data-del-key="'+d.key+'"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> 删除</button>'+
+      '</div>'+
     '</div></div>';
 }
 
 function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
 function dlImg(url,filename){const a=document.createElement('a');a.href=url+'?dl=1';a.download=filename;a.click()}
+function delCard(key,el){
+  if(!confirm('确认删除 '+key+' ?'))return;
+  fetch('/i/'+key,{method:'DELETE'}).then(()=>{
+    el.closest('.r-item').style.opacity='0';
+    setTimeout(()=>el.closest('.r-item').remove(),300);
+  }).catch(()=>alert('删除失败'));
+}
 
-// 事件委托：下载按钮
+// 事件委托：下载按钮 + 删除按钮
 document.addEventListener('click',function(e){
-  const btn=e.target.closest('.dl-preview,.dl-btn');
-  if(btn&&btn.dataset.dlUrl){
-    e.stopPropagation();
-    dlImg(btn.dataset.dlUrl,btn.dataset.dlKey);
-  }
+  const dlBtn=e.target.closest('.dl-preview,.dl-btn');
+  if(dlBtn&&dlBtn.dataset.dlUrl){e.stopPropagation();dlImg(dlBtn.dataset.dlUrl,dlBtn.dataset.dlKey);return}
+  const delBtn=e.target.closest('.del-btn');
+  if(delBtn&&delBtn.dataset.delKey){e.stopPropagation();delCard(delBtn.dataset.delKey,delBtn)}
 });
 
 function showLB(src,isVid){
