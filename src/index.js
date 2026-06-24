@@ -337,17 +337,39 @@ function getImgDim(file){
 
 // URL 上传
 async function urlUpload(){
-  const url=$('#urlIn').value.trim();if(!url)return;
-  bar.style.display='block';status.style.display='block';status.innerHTML='<span class="spin"></span>正在下载...';
+  const url=$('#urlIn').value.trim();
+  if(!url){
+    $('#status').style.display='block';$('#status').textContent='请输入图片 URL';$('#status').style.color='#dc2626';
+    setTimeout(()=>{$('#status').style.display='none';$('#status').style.color=''},2000);
+    return;
+  }
+  bar.style.display='block';status.style.display='block';status.innerHTML='<span class="spin"></span>正在下载图片...';
   fill.style.width='20%';results.style.display='block';results.innerHTML='';
   const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
   try{
-    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd,cf_turnstile:document.getElementById('cf-turnstile')?.dataset?.token||''})});
-    const d=await r.json();fill.style.width='100%';
-    if(d.url){results.innerHTML+=card(d);status.textContent='上传完成';$('#urlIn').value=''}
-    else{results.innerHTML+='<div style="color:#dc2626;padding:12px">'+d.error+'</div>';status.textContent='失败'}
-  }catch(e){results.innerHTML+='<div style="color:#dc2626;padding:12px">网络错误</div>'}
-  setTimeout(()=>{bar.style.display='none';status.style.display='none'},2500);loadRecent();loadStats()
+    const body={url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd};
+    const tkn=document.getElementById('cf-turnstile')?.dataset?.token;
+    if(tkn)body.cf_turnstile=tkn;
+    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    fill.style.width='100%';
+    if(d.url){
+      results.innerHTML=card(d);
+      status.textContent='上传成功！';
+      status.style.color='#10b981';
+      $('#urlIn').value='';
+    }else{
+      results.innerHTML='<div style="color:#dc2626;padding:12px;font-size:.9rem">'+(d.error||'上传失败')+'</div>';
+      status.textContent='上传失败';
+      status.style.color='#dc2626';
+    }
+  }catch(e){
+    results.innerHTML='<div style="color:#dc2626;padding:12px;font-size:.9rem">网络错误，请重试</div>';
+    status.textContent='网络错误';
+    status.style.color='#dc2626';
+  }
+  setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+  loadRecent();loadStats();
 }
 
 // 上传
@@ -359,7 +381,7 @@ async function doUpload(files){
 
   bar.style.display='block';status.style.display='block';results.style.display='block';
   let d=0,t=files.length;const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
-
+  status.innerHTML='<span class="spin"></span>准备上传...';status.style.color='';
   // ZIP 处理
   for(const f of files){
     if(!isZip(f))continue;
@@ -375,9 +397,11 @@ async function doUpload(files){
         try{const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();if(j.url)results.innerHTML+=card(j)}catch(e){}
         d++
       }
-      fill.style.width='100%';status.textContent='完成 ('+t+' 个)';
-    }catch(e){results.innerHTML+='<div style="color:#dc2626">ZIP 解压失败</div>'}
-    setTimeout(()=>{bar.style.display='none';status.style.display='none'},2500);loadRecent();loadStats();return
+      fill.style.width='100%';status.textContent='ZIP 解压上传完成 ('+t+' 个)';status.style.color='#10b981';
+    }catch(e){results.innerHTML+='<div style="color:#dc2626;padding:12px">ZIP 解压失败</div>';status.textContent='ZIP 解压失败';status.style.color='#dc2626'}
+    setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+    $('#selFiles').classList.remove('show');
+    loadRecent();loadStats();return
   }
 
   // 图片/视频批量上传
@@ -396,8 +420,10 @@ async function doUpload(files){
     }catch(e){results.innerHTML+='<div style="color:#dc2626;padding:8px">网络错误</div>'}
     d++
   }
-  fill.style.width='100%';status.textContent='完成 ('+d+' 个)';
-  setTimeout(()=>{bar.style.display='none';status.style.display='none'},2500);loadRecent();loadStats()
+  fill.style.width='100%';status.textContent='上传完成 ('+d+' 个)';status.style.color='#10b981';
+  setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+  $('#selFiles').classList.remove('show');
+  loadRecent();loadStats()
 }
 
 // ZIP 解压
@@ -456,7 +482,10 @@ function showLB(src,isVid){
 $('#lb').addEventListener('click',function(e){if(e.target===this){this.classList.remove('show');$('#lbVid').pause()}});
 
 async function loadRecent(){
-  try{const r=await fetch('/list');const d=await r.json();
+  try{
+    const r=await fetch('/recent');
+    if(!r.ok){$('#recentCard').style.display='none';return}
+    const d=await r.json();
     if(d.files?.length){
       $('#recentCard').style.display='';
       $('#thumbs').innerHTML=d.files.slice(0,20).map(f=>{
@@ -468,8 +497,8 @@ async function loadRecent(){
           '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\\''+f.url+'\\');this.textContent=\\'✓\\';setTimeout(()=>this.textContent=\\'📋\\',800)">📋</button>'+
           '<button class="ov-del" onclick="event.stopPropagation();delImg(\\''+f.key+'\\',this.closest(\\'.thumb\\'))">✕</button></div></div>';
       }).join('');
-    }
-  }catch(e){}
+    }else{$('#recentCard').style.display='none'}
+  }catch(e){$('#recentCard').style.display='none'}
 }
 
 async function delImg(key,el){if(!confirm('确认删除 '+key+' ?'))return;try{await fetch('/i/'+key,{method:'DELETE'});el.style.opacity='0';setTimeout(()=>el.remove(),300)}catch(e){}}
@@ -735,7 +764,13 @@ export default{
 
     if(url.pathname.startsWith('/i/')&&request.method==='DELETE'){await env.IMG.delete(url.pathname.slice(3));return Response.json({success:true},{headers:cors(o)})}
 
-    // 列表
+    // 最近上传（不被 Zero Trust 保护，给首页用）
+    if(url.pathname==='/recent'){
+      const l=await env.IMG.list({limit:20});
+      return Response.json({files:l.objects.map(o=>({key:o.key,url:`${url.origin}/i/${o.key}`,size:o.size,uploaded:o.customMetadata?.uploadedAt||o.uploaded,protected:!!o.customMetadata?.password}))},{headers:cors(o)});
+    }
+
+    // 列表（全部，受 Zero Trust 保护）
     if(url.pathname==='/list'){
       const all=url.searchParams.has('all');const l=await env.IMG.list({limit:all?1000:20});
       return Response.json({files:l.objects.map(o=>({key:o.key,url:`${url.origin}/i/${o.key}`,size:o.size,uploaded:o.customMetadata?.uploadedAt||o.uploaded,protected:!!o.customMetadata?.password}))},{headers:cors(o)});
