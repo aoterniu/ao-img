@@ -81,7 +81,11 @@ a{color:var(--ac);text-decoration:none}
 .results{display:none;margin-top:14px}
 .r-item{background:var(--light);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px}
 .r-item .top{display:flex;gap:16px;margin-bottom:14px}
-.r-item .top .preview{width:200px;height:180px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--bdr);cursor:pointer;flex-shrink:0}
+.r-item .top .preview-wrap{position:relative;flex-shrink:0}
+.r-item .top .preview{width:200px;height:180px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--bdr);cursor:pointer;display:block}
+.r-item .top .dl-preview{position:absolute;bottom:8px;right:8px;width:36px;height:36px;background:rgba(0,0,0,.6);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;backdrop-filter:blur(4px)}
+.r-item .top .dl-preview:hover{background:rgba(0,0,0,.8);transform:scale(1.1)}
+.r-item .top .dl-preview svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
 .r-item .top .info{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
 .r-item .top .info .line{font-size:.88rem;color:var(--text);display:flex;gap:6px}
 .r-item .top .info .line b{color:var(--sub);font-weight:500;flex-shrink:0}
@@ -92,6 +96,10 @@ a{color:var(--ac);text-decoration:none}
 .r-item .links .row input{flex:1;border:1px solid var(--bdr);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:'SF Mono','JetBrains Mono',monospace;background:#fff}
 .r-item .links .row .cpy{padding:6px 12px;background:var(--ac);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.74rem;font-weight:600;white-space:nowrap;transition:all .12s}
 .r-item .links .row .cpy:active{transform:scale(.95)}.r-item .links .row .cpy.ok{background:#34d399}
+.r-item .links .dl-btn{display:flex;align-items:center;gap:6px;margin-top:8px;padding:10px 18px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;width:fit-content;transition:all .15s}
+.r-item .links .dl-btn:hover{opacity:.9;transform:translateY(-1px)}
+.r-item .links .dl-btn:active{transform:scale(.97)}
+.r-item .links .dl-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
 .r-item .dim{color:#10b981;font-weight:600}
 .r-item .sav{color:#f59e0b;font-weight:600}
 
@@ -377,7 +385,9 @@ function card(d){
   const dimLine=d.dim?'<div class="line"><b>尺　寸：</b>'+d.dim+'</div>':'';
   const savLine=d.savings?'<div class="line"><b>压缩率：</b>已节省 <span class="sav">'+d.savings+'</span> ✨</div>':'';
   const pwdLine=d.protected?'<div class="line"><b>保　护：</b>🔒 密码访问</div>':'';
-  const previewTag=isVideo?'<video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video>':'<img class="preview" src="'+d.url+'" onclick="showLB(this.src)">';
+  const previewTag=isVideo
+    ?'<div class="preview-wrap"><video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video><button class="dl-preview" onclick="event.stopPropagation();dlImg(\''+d.url+'\',\''+d.key+'\')" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>'
+    :'<div class="preview-wrap"><img class="preview" src="'+d.url+'" onclick="showLB(this.src)"><button class="dl-preview" onclick="event.stopPropagation();dlImg(\''+d.url+'\',\''+d.key+'\')" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>';
   const md=isVideo?'[video]('+d.url+')':'![]('+d.url+')';
   const html=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+d.url+'" alt="'+d.key+'">';
   const bb=isVideo?'[video]'+d.url+'[/video]':'[IMG]'+d.url+'[/IMG]';
@@ -394,10 +404,12 @@ function card(d){
       '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
       '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<button class="dl-btn" onclick="dlImg(\''+d.url+'\',\''+d.key+'\')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
     '</div></div>';
 }
 
 function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
+function dlImg(url,filename){const a=document.createElement('a');a.href=url+'?dl=1';a.download=filename;a.click()}
 
 function showLB(src,isVid){
   const img=$('#lbImg'),vid=$('#lbVid');
