@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#10b981">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<title>ao 图床 - 简单、快速、免费的图床</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f5f7fa;color:#333;min-height:100vh;display:flex;flex-direction:column}
+:root{--ac:#10b981;--ac2:#059669;--bg:#f5f7fa;--card:#fff;--bdr:#e5e7eb;--text:#1f2937;--sub:#6b7280;--light:#f9fafb;--r:12px}
+a{color:var(--ac);text-decoration:none}
+
+/* 顶部导航 */
+.navbar{background:#fff;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;padding:0 24px}
+.navbar .logo{font-size:1.1rem;font-weight:700;color:var(--ac);cursor:default}
+.navbar .nav{margin-left:auto;display:flex;gap:20px;font-size:.88rem}
+.navbar .nav a{color:var(--sub);font-weight:500;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s}
+.navbar .nav a:hover,.navbar .nav a.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+/* Hero */
+.hero{background:linear-gradient(180deg,#ecfdf5 0%,var(--bg) 100%);padding:48px 20px 0;text-align:center}
+.hero h1{font-size:2rem;font-weight:700;color:var(--text)}
+.hero .tagline{margin-top:10px;font-size:1rem;color:var(--sub)}
+.hero .warn{margin-top:8px;font-size:.78rem;color:#9ca3af}
+
+/* 统计 */
+.stats{display:flex;justify-content:center;gap:28px;padding:18px 20px 0;flex-wrap:wrap}
+.stats .item{text-align:center}.stats .item .num{font-size:1rem;font-weight:700;color:var(--ac)}.stats .item .lbl{font-size:.72rem;color:var(--sub);margin-top:2px}
+
+/* 主内容 */
+.main{max-width:760px;margin:0 auto;padding:20px 20px 60px;width:100%;flex:1}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px;overflow:hidden}
+.card-hd{padding:14px 20px;border-bottom:1px solid var(--bdr);font-weight:600;font-size:.92rem;display:flex;align-items:center;gap:8px}
+.card-hd .acts{margin-left:auto;display:flex;gap:12px;font-size:.78rem}
+.card-hd .acts a{color:var(--sub)}.card-hd .acts a:hover{color:var(--ac)}
+.card-bd{padding:20px}
+
+/* 上传区 */
+.drop{border:2px dashed #d1d5db;border-radius:10px;padding:44px 20px;text-align:center;cursor:pointer;transition:all .25s;background:var(--light)}
+.drop:hover{border-color:var(--ac);background:#ecfdf5}
+.drop.active{border-color:var(--ac);background:#d1fae5;transform:scale(1.003)}
+.drop svg{width:44px;height:44px;color:var(--ac)}
+.drop .t1{margin-top:12px;font-size:.95rem;color:var(--text)}
+.drop .t2{margin-top:4px;font-size:.8rem;color:var(--sub)}
+input[type=file]{display:none}
+.selected-files{margin-top:10px;font-size:.82rem;color:var(--sub);display:none;padding:8px 12px;background:var(--light);border-radius:6px;border:1px solid var(--bdr)}
+.selected-files.show{display:block}
+.selected-files .file-item{display:flex;align-items:center;gap:6px;padding:4px 0}
+.selected-files .file-item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selected-files .file-item .size{color:var(--ac);font-weight:500;flex-shrink:0}
+
+/* URL输入 */
+.url-row{display:flex;gap:8px;margin-top:14px}
+.url-row input{flex:1;border:1px solid var(--bdr);border-radius:8px;padding:10px 14px;font-size:.9rem;outline:none;transition:border .2s}
+.url-row input:focus{border-color:var(--ac)}.url-row input::placeholder{color:#9ca3af}
+.btn{padding:10px 18px;background:var(--ac);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.85rem;white-space:nowrap;transition:all .15s}
+.btn:hover{background:var(--ac2)}.btn:active{transform:scale(.97)}
+.btn-ghost{background:transparent;border:1px solid var(--bdr);color:var(--sub)}.btn-ghost:hover{border-color:var(--ac);color:var(--ac);background:#ecfdf5}
+
+/* 选项 */
+.opts{display:flex;gap:16px;margin-top:14px;padding:14px 18px;background:var(--light);border-radius:8px;border:1px solid var(--bdr);flex-wrap:wrap;align-items:center}
+.opts .opt{display:flex;align-items:center;gap:6px;font-size:.83rem;color:var(--sub)}
+.opts select{border:1px solid var(--bdr);border-radius:6px;padding:5px 8px;font-size:.8rem;color:var(--text);background:#fff}
+.opts .chk{display:flex;align-items:center;gap:5px;font-size:.83rem;color:var(--sub);cursor:pointer;user-select:none}
+.opts .chk input{accent-color:var(--ac);cursor:pointer}
+.opts .hint{font-size:.76rem;color:#9ca3af;margin-left:2px}
+.pwd-input{display:none;margin-top:10px}
+.pwd-input input{width:100%;border:1px solid var(--bdr);border-radius:8px;padding:8px 14px;font-size:.88rem;outline:none}
+.pwd-input input:focus{border-color:var(--ac)}
+
+/* 进度 */
+.bar{height:3px;background:var(--bdr);border-radius:2px;margin-top:14px;overflow:hidden;display:none}
+.bar .fill{height:100%;background:linear-gradient(90deg,var(--ac),#06b6d4);width:0;transition:width .15s}
+.status{text-align:center;margin-top:8px;font-size:.82rem;color:var(--sub);display:none}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid #d1d5db;border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 结果 */
+.results{display:none;margin-top:14px}
+.r-item{background:var(--light);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.r-item .top{display:flex;gap:16px;margin-bottom:14px}
+.r-item .top .preview-wrap{position:relative;flex-shrink:0}
+.r-item .top .preview{width:200px;height:180px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--bdr);cursor:pointer;display:block}
+.r-item .top .dl-preview{position:absolute;bottom:8px;right:8px;width:36px;height:36px;background:rgba(0,0,0,.6);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;backdrop-filter:blur(4px)}
+.r-item .top .dl-preview:hover{background:rgba(0,0,0,.8);transform:scale(1.1)}
+.r-item .top .dl-preview svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.r-item .top .info{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.r-item .top .info .line{font-size:.88rem;color:var(--text);display:flex;gap:6px}
+.r-item .top .info .line b{color:var(--sub);font-weight:500;flex-shrink:0}
+.r-item .top .info .success{font-size:.92rem;font-weight:600;color:var(--ac);display:flex;align-items:center;gap:6px}
+.r-item .links{display:flex;flex-direction:column;gap:5px}
+.r-item .links .row{display:flex;gap:5px;align-items:center}
+.r-item .links .row label{font-size:.72rem;color:var(--sub);width:60px;flex-shrink:0;text-align:right}
+.r-item .links .row input{flex:1;border:1px solid var(--bdr);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:'SF Mono','JetBrains Mono',monospace;background:#fff}
+.r-item .links .row .cpy{padding:6px 12px;background:var(--ac);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.74rem;font-weight:600;white-space:nowrap;transition:all .12s}
+.r-item .links .row .cpy:active{transform:scale(.95)}.r-item .links .row .cpy.ok{background:#34d399}
+.r-item .links .btn-row{display:flex;gap:12px;margin-top:8px;justify-content:flex-end}
+.r-item .links .dl-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;height:36px;background:var(--ac);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .15s}
+.r-item .links .dl-btn:hover{background:var(--ac2);transform:translateY(-1px)}
+.r-item .links .dl-btn:active{transform:scale(.97)}
+.r-item .links .dl-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2}
+.r-item .links .del-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;height:36px;background:transparent;color:var(--sub);border:1px solid var(--bdr);border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .15s}
+.r-item .links .del-btn:hover{color:#ef4444;border-color:#ef4444;background:#fef2f2}
+.r-item .links .del-btn:active{transform:scale(.97)}
+.r-item .links .del-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.r-item .dim{color:#10b981;font-weight:600}
+.r-item .sav{color:#f59e0b;font-weight:600}
+
+/* 最近上传 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;min-height:100px;will-change:contents}
+.thumb{border-radius:8px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;position:relative;aspect-ratio:1;background:var(--light);transition:all .2s;contain-intrinsic-size:90px 90px}
+.thumb:hover{border-color:var(--ac);box-shadow:0 2px 8px rgba(16,185,129,.15)}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;gap:4px;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.thumb:hover .overlay{opacity:1}
+.thumb .overlay button{padding:5px 8px;font-size:.72rem;border:none;border-radius:4px;cursor:pointer;font-weight:600}
+.thumb .overlay .ov-copy{background:var(--ac);color:#fff}
+.thumb .overlay .ov-del{background:#ef4444;color:#fff}
+.thumb .overlay .ov-prev{background:#3b82f6;color:#fff}
+.empty{text-align:center;padding:32px;color:var(--sub);font-size:.85rem}
+
+/* 捐助 */
+.donate .qr-row{display:flex;justify-content:center;gap:40px;padding:8px 0}
+.donate .qr-box{text-align:center}
+.donate .qr-box img{width:180px;height:180px;border-radius:12px;border:1px solid var(--bdr);transition:transform .2s,box-shadow .2s;cursor:pointer}
+.donate .qr-box img:hover{transform:scale(1.03);box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.donate .qr-box.wc img{background:#f0fdf4}
+.donate .qr-box.alipay img{background:#eff6ff}
+.donate .qr-box .ql{font-size:.82rem;color:var(--sub);margin-top:10px;font-weight:500}
+.donate .footer-text{font-size:.85rem;color:var(--sub);margin-top:16px;text-align:center}
+
+/* 关于 */
+.about{padding:20px;font-size:.85rem;color:var(--sub);line-height:1.7}
+.about h3{font-size:.95rem;color:var(--text);margin-bottom:6px}
+
+/* Lightbox */
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;display:none;justify-content:center;align-items:center;cursor:pointer;backdrop-filter:blur(4px)}
+.lb.show{display:flex}
+.lb img,.lb video{max-width:92vw;max-height:92vh;border-radius:8px;contain-intrinsic-size:600px 400px}
+
+/* 公告 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;justify-content:center;align-items:center;backdrop-filter:blur(2px)}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:420px;width:90%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative}
+.modal h2{font-size:1.15rem;margin-bottom:12px}.modal p{font-size:.88rem;color:var(--sub);line-height:1.6;margin-bottom:10px}
+.modal .close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--sub)}
+.modal .ok-btn{width:100%;padding:10px;background:var(--ac);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:.9rem}
+
+/* Footer */
+footer{text-align:center;padding:24px;color:var(--sub);font-size:.78rem;border-top:1px solid var(--bdr)}
+footer .links{display:flex;justify-content:center;gap:16px;margin-bottom:8px}
+footer .links a{color:var(--sub);font-size:.8rem}.footer .links a:hover{color:var(--ac)}
+
+@media(max-width:640px){.navbar{padding:0 12px}.navbar .nav{gap:12px;font-size:.8rem}.hero h1{font-size:1.5rem}.main{padding:12px 12px 40px}.opts{gap:10px;padding:10px}.url-row{flex-direction:column}.stats{gap:20px}}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo">ao 图床</div>
+  <div class="nav">
+    <a href="/" class="on">上传</a>
+    <a href="/api">API文档</a>
+    <a href="/extensions">扩展</a>
+    <a href="https://blog.aoterniu.online" target="_blank">博客</a>
+    <a href="#donate">捐助</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>简单、快速、免费的图床</h1>
+  <p class="tagline">拖拽上传 · 加密保护 · 格式转换 · 开放 API</p>
+  <p class="warn">Cloudflare R2 全球加速 · 图片 ≤ 100MB · 短视频 ≤ 15MB（最长10秒）</p>
+</div>
+
+<div class="stats">
+  <div class="item"><div class="num" id="sTotal">-</div><div class="lbl">总上传</div></div>
+  <div class="item"><div class="num" id="sToday">-</div><div class="lbl">今日</div></div>
+  <div class="item"><div class="num" id="sSize">-</div><div class="lbl">存储量</div></div>
+  <div class="item"><div class="num" id="sTransform">-</div><div class="lbl">格式转换</div></div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="card-bd">
+      <div class="drop" id="drop">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 32V16m0 0l-8 8m8-8l8 8" stroke-linecap="round" stroke-linejoin="round"/><rect x="6" y="6" width="36" height="36" rx="6" stroke-dasharray="4 3"/></svg>
+        <div class="t1">点击选择文件、拖拽到这里或直接粘贴（支持图片、短视频、ZIP批量）</div>
+      </div>
+      <input type="file" id="fi" accept="image/*,video/mp4,video/webm,.zip" multiple>
+      <div class="selected-files" id="selFiles"></div>
+
+      <div class="url-row">
+        <input type="text" id="urlIn" placeholder="粘贴图片 URL" onkeydown="if(event.key==='Enter')urlUpload()">
+        <button class="btn" onclick="urlUpload()">URL 上传</button>
+        <button class="btn btn-ghost" onclick="fi.click()">批量上传</button>
+      </div>
+
+      <div class="opts">
+        <div class="opt"><label>图片存储:</label><select disabled><option>默认</option></select></div>
+        <div class="opt"><label>输出格式:</label><select id="fmt"><option value="original">自动（推荐）- WebP 优先，体积最小</option><option value="preserve">保留原格式 - 不做转换</option><option value="webp">WebP - 体积最小，压缩率高</option><option value="jpg">JPG - 兼容性最好，照片适用</option><option value="png">PNG - 支持透明，无损质量</option></select></div>
+        <div class="opt"><label>质量:</label><select id="qlt"><option value="100">无损</option><option value="90" selected>90%</option><option value="80">80%</option><option value="70">70%</option></select></div>
+        <label class="chk"><input type="checkbox" id="pwdChk" onchange="$('#pwdIn').style.display=this.checked?'':'none'"> 需要密码访问</label>
+      </div>
+      <div class="pwd-input" id="pwdIn"><input type="password" id="pwdVal" placeholder="设置访问密码（可选）"></div>
+
+      <div id="cf-turnstile" style="height:0;overflow:hidden;margin:0;padding:0"></div>
+      <script>
+        // Turnstile: 非交互式验证，不渲染可见 Widget，避免 CLS
+        window.turnstileCallback = function(token) {
+          const el = document.getElementById('cf-turnstile');
+          if (el) el.dataset.token = token;
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+          if (window.turnstile) {
+            turnstile.render('#cf-turnstile', {
+              sitekey: '0x4AAAAAADqQBQHA_8AbrwlR',
+              callback: window.turnstileCallback,
+              'error-callback': function() { console.log('Turnstile error'); },
+              appearance: 'execute'
+            });
+          }
+        });
+      </script>
+
+      <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
+      <div class="status" id="status"></div>
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+
+  <div class="card" id="recentCard" style="display:none">
+    <div class="card-hd">📁 最近上传</div>
+    <div class="card-bd"><div class="grid" id="thumbs"></div></div>
+  </div>
+
+  <div class="card" id="donate">
+    <div class="card-hd">☕ 支持作者</div>
+    <div class="card-bd donate">
+      <p style="font-size:.9rem;color:var(--text);text-align:center;margin-bottom:4px;font-weight:500">如果 ao 图床帮到了你，欢迎请作者喝杯咖啡</p>
+      <div class="qr-row">
+        <div class="qr-box wc"><img src="https://img.aoterniu.online/i/NRdiqLKl.jpg" alt="微信" loading="lazy"><div class="ql">微信赞赏</div></div>
+        <div class="qr-box alipay"><img src="https://img.aoterniu.online/i/4PUuGyVz.jpg" alt="支付宝" loading="lazy"><div class="ql">支付宝赞赏</div></div>
+      </div>
+      <p class="footer-text" style="text-align:center">你的支持是持续更新的最大动力 ❤️</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">📋 关于 ao 图床</div>
+    <div class="card-bd about">
+      <h3>简单、快速、免费的个人图床</h3>
+      <p>基于 Cloudflare R2 对象存储，全球 CDN 加速，零出口流量费用。</p>
+      <p>支持图片、短视频、ZIP 批量上传。可设置密码保护、格式转换、质量压缩。</p>
+      <p>开放 RESTful API，兼容 PicGo、Typora 等第三方工具。</p>
+      <p style="margin-top:8px"><strong>技术栈：</strong>Cloudflare Worker + R2 存储 + KV 统计 · <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub 源码</a></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="links">
+    <a href="/">首页</a><a href="/api">API文档</a><a href="/extensions">扩展</a>
+    <a href="https://blog.aoterniu.online" target="_blank">技术笔记</a>
+    <a href="https://github.com/aoterniu/ao-img" target="_blank">GitHub</a>
+  </div>
+  ao 图床 · img.aoterniu.online · Cloudflare R2 · © 2026
+</footer>
+
+<div class="lb" id="lb" onclick="this.classList.remove('show')"><img id="lbImg" style="display:none"><video id="lbVid" controls style="display:none"></video></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <button class="close" onclick="closeModal()">&times;</button>
+    <h2>📢 更新公告</h2>
+    <p><strong>ao 图床 v5.0</strong> 已上线！</p>
+    <p>✅ 图片 + 短视频 + ZIP 批量上传<br>✅ 密码保护访问<br>✅ 浏览器扩展 & WordPress 插件<br>✅ 格式转换 & 质量压缩<br>✅ 图片尺寸 & 压缩率显示<br>✅ PWA 可安装到桌面</p>
+    <button class="ok-btn" onclick="closeModal()">我知道了</button>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const drop=$('#drop'),fi=$('#fi'),bar=$('#bar'),fill=$('#fill'),status=$('#status'),results=$('#results');
+
+// 公告
+if(!localStorage.getItem('ao_announced_v5')){$('#modal').classList.add('show')}
+function closeModal(){$('#modal').classList.remove('show');localStorage.setItem('ao_announced_v5','1')}
+
+// 拖拽
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('active')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('active'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('active');doUpload(e.dataTransfer.files)});
+
+// 文件选择 - 自动上传（多重兼容性处理）
+function handleFileSelect(e){
+  try{
+    const files=e.target.files||e.dataTransfer?.files;
+    if(!files||files.length===0)return;
+    const fileList=Array.from(files);
+    showSelectedFiles(fileList);
+    doUpload(fileList);
+    if(e.target)e.target.value='';
+  }catch(err){console.error('文件选择错误:',err)}
+}
+fi.addEventListener('change',handleFileSelect);
+fi.addEventListener('input',handleFileSelect);
+// 防止 drop 区域的点击事件冒泡到 fi
+drop.addEventListener('click',function(e){
+  if(e.target===fi)return;
+  fi.click();
+});
+
+// 显示选中的文件
+function showSelectedFiles(files){
+  const el=$('#selFiles');
+  if(!files.length){el.classList.remove('show');return}
+  let html='';
+  for(const f of files){
+    const sz=f.size<1024?f.size+'B':f.size<1048576?(f.size/1024).toFixed(1)+'KB':(f.size/1048576).toFixed(1)+'MB';
+    html+='<div class="file-item"><span class="name">📄 '+f.name+'</span><span class="size">'+sz+'</span></div>';
+  }
+  el.innerHTML=html;el.classList.add('show');
+}
+document.addEventListener('paste',e=>{const it=e.clipboardData?.items;if(!it)return;const fs=[];for(const i of it)if(i.type.startsWith('image/'))fs.push(i.getAsFile());if(fs.length)doUpload(fs)});
+
+// 获取图片尺寸
+function getImgDim(file){
+  return new Promise(r=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{URL.revokeObjectURL(url);r({w:img.naturalWidth,h:img.naturalHeight})};
+    img.onerror=()=>{URL.revokeObjectURL(url);r({w:0,h:0})};
+    img.src=url;
+  });
+}
+
+// URL 上传
+async function urlUpload(){
+  const url=$('#urlIn').value.trim();
+  if(!url){
+    $('#status').style.display='block';$('#status').textContent='请输入图片 URL';$('#status').style.color='#dc2626';
+    setTimeout(()=>{$('#status').style.display='none';$('#status').style.color=''},2000);
+    return;
+  }
+  bar.style.display='block';status.style.display='block';status.innerHTML='<span class="spin"></span>正在下载图片...';
+  fill.style.width='20%';results.style.display='block';results.innerHTML='';
+  const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
+  try{
+    const body={url,format:$('#fmt').value,quality:$('#qlt').value,password:pwd};
+    const tkn=document.getElementById('cf-turnstile')?.dataset?.token;
+    if(tkn)body.cf_turnstile=tkn;
+    const r=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    fill.style.width='100%';
+    if(d.url){
+      results.innerHTML=card(d);
+      status.textContent='上传成功！';
+      status.style.color='#10b981';
+      $('#urlIn').value='';
+    }else{
+      results.innerHTML='<div style="color:#dc2626;padding:12px;font-size:.9rem">'+(d.error||'上传失败')+'</div>';
+      status.textContent='上传失败';
+      status.style.color='#dc2626';
+    }
+  }catch(e){
+    results.innerHTML='<div style="color:#dc2626;padding:12px;font-size:.9rem">网络错误，请重试</div>';
+    status.textContent='网络错误';
+    status.style.color='#dc2626';
+  }
+  setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+  loadRecent();loadStats();
+}
+
+// 上传（带错误捕获）
+async function doUpload(files){
+  if(!files||!files.length)return;
+  try{
+    const isZip=f=>f.name&&f.name.endsWith('.zip');
+    const isVid=f=>f.type?.startsWith('video/')||f.name?.match(/\.(mp4|webm)$/i);
+    const isImg=f=>f.type?.startsWith('image/')||f.name?.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+
+    bar.style.display='block';status.style.display='block';results.style.display='block';
+    let d=0,t=files.length;const pwd=$('#pwdChk').checked?$('#pwdVal').value:'';
+    status.innerHTML='<span class="spin"></span>准备上传...';status.style.color='';
+  // ZIP 处理
+  for(const f of files){
+    if(!isZip(f))continue;
+    status.innerHTML='<span class="spin"></span>正在解压 ZIP...';
+    try{
+      const imgs=await extractZip(await f.arrayBuffer());
+      if(!imgs.length){results.innerHTML+='<div style="color:#dc2626;padding:12px">ZIP 中没有图片/视频</div>';continue}
+      t=imgs.length;d=0;
+      for(const img of imgs){
+        status.innerHTML='<span class="spin"></span>上传 ('+d+'/'+t+'): '+img.name;
+        fill.style.width=(d/t*100)+'%';
+        const fd=new FormData();fd.append('file',img.blob,img.name);fd.append('format',$('#fmt').value);fd.append('quality',$('#qlt').value);if(pwd)fd.append('password',pwd);
+        try{const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();if(j.url)results.innerHTML+=card(j)}catch(e){}
+        d++
+      }
+      fill.style.width='100%';status.textContent='ZIP 解压上传完成 ('+t+' 个)';status.style.color='#10b981';
+    }catch(e){results.innerHTML+='<div style="color:#dc2626;padding:12px">ZIP 解压失败</div>';status.textContent='ZIP 解压失败';status.style.color='#dc2626'}
+    setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+    $('#selFiles').classList.remove('show');
+    loadRecent();loadStats();return
+  }
+
+  // 图片/视频批量上传
+  for(const f of files){
+    if(!isImg(f)&&!isVid(f)){d++;continue}
+    status.innerHTML='<span class="spin"></span>上传 ('+d+'/'+t+')...';fill.style.width=(d/t*100)+'%';
+    // 获取图片尺寸
+    let dim=null;
+    if(isImg(f)){dim=await getImgDim(f)}
+    const fd=new FormData();fd.append('file',f);fd.append('format',$('#fmt').value);fd.append('quality',$('#qlt').value);if(pwd)fd.append('password',pwd);
+    const tkn=document.getElementById('cf-turnstile')?.dataset?.token;if(tkn)fd.append('cf-turnstile',tkn);
+    try{
+      const r=await fetch('/upload',{method:'POST',body:fd});const j=await r.json();
+      if(j.url){if(dim&&dim.w)j.dim=dim.w+'×'+dim.h;results.innerHTML+=card(j)}
+      else results.innerHTML+='<div style="color:#dc2626;padding:8px">'+j.error+'</div>'
+    }catch(e){const msg=e?.message||e?.toString()||'未知错误';results.innerHTML+='<div style="color:#dc2626;padding:8px;font-size:.85rem">上传失败: '+msg+'</div>'}
+    d++
+  }
+  fill.style.width='100%';status.textContent='上传完成 ('+d+' 个)';status.style.color='#10b981';
+  setTimeout(()=>{bar.style.display='none';status.style.display='none';status.style.color=''},3000);
+  $('#selFiles').classList.remove('show');
+  loadRecent();loadStats()
+  }catch(err){
+    console.error('上传错误:',err);
+    bar.style.display='block';status.style.display='block';
+    status.textContent='上传失败: '+err.message;status.style.color='#dc2626';
+    results.style.display='block';
+    results.innerHTML='<div style="color:#dc2626;padding:12px">上传失败，请重试</div>';
+    setTimeout(()=>{bar.style.display='none';status.style.display='none'},3000);
+  }
+}
+
+// ZIP 解压
+async function extractZip(ab){
+  const out=[];
+  try{
+    const files=await JSZip.loadAsync(ab);
+    for(const [name,file] of Object.entries(files)){
+      if(file.dir)continue;
+      if(!name.match(/\.(jpg|jpeg|png|gif|webp|bmp|mp4|webm)$/i))continue;
+      const blob=await file.async('blob');out.push({name,blob});
+    }
+  }catch(e){console.error('ZIP',e)}
+  return out
+}
+
+function card(d){
+  const sz=d.size<1024?d.size+'B':d.size<1048576?(d.size/1024).toFixed(1)+'KB':(d.size/1048576).toFixed(1)+'MB';
+  const fmt=(d.originalName||'').split('.').pop().toUpperCase()||'IMG';
+  const isVideo=fmt==='MP4'||fmt==='WEBM';
+
+  // 根据用户选择的格式生成 URL
+  const selectedFormat=$('#fmt').value;
+  const quality=$('#qlt').value;
+  let displayUrl=d.url;
+  if(selectedFormat!=='original'&&selectedFormat!=='preserve'&&!isVideo){
+    displayUrl=d.url+'?format='+selectedFormat+'&quality='+quality;
+  }
+
+  const dimLine=d.dim?'<div class="line"><b>尺　寸：</b>'+d.dim+'</div>':'';
+  const savLine=d.savings?'<div class="line"><b>压缩率：</b>已节省 <span class="sav">'+d.savings+'</span> ✨</div>':'';
+  const pwdLine=d.protected?'<div class="line"><b>保　护：</b>🔒 密码访问</div>':'';
+  const previewTag=isVideo
+    ?'<div class="preview-wrap"><video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>'
+    :'<div class="preview-wrap"><img class="preview" src="'+displayUrl+'" onclick="showLB(this.src)"><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>';
+  const md=isVideo?'[video]('+d.url+')':'![]('+displayUrl+')';
+  const htmlCode=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+displayUrl+'" alt="'+d.key+'">';
+  const bb=isVideo?'[video]'+d.url+'[/video]':'[IMG]'+displayUrl+'[/IMG]';
+  return '<div class="r-item">'+
+    '<div class="success">✅ 上传成功</div>'+
+    '<div class="top">'+previewTag+
+      '<div class="info">'+
+        '<div class="line"><b>文件名：</b>'+d.key+'</div>'+
+        '<div class="line"><b>大　小：</b>'+sz+'</div>'+
+        '<div class="line"><b>格　式：</b>'+fmt+'</div>'+dimLine+savLine+pwdLine+
+      '</div></div>'+
+    '<div class="links">'+
+      '<div class="row"><label>直链</label><input value="'+displayUrl+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>Markdown</label><input value="'+md+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>HTML</label><input value="'+html+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="row"><label>BBCode</label><input value="'+bb+'" readonly><button class="cpy" onclick="cp(this)">复制</button></div>'+
+      '<div class="btn-row">'+
+        '<button class="dl-btn" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 下载原图</button>'+
+        '<button class="del-btn" data-del-key="'+d.key+'"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> 删除</button>'+
+      '</div>'+
+    '</div></div>';
+}
+
+function cp(b){const i=b.previousElementSibling;navigator.clipboard.writeText(i.value);b.textContent='已复制';b.classList.add('ok');setTimeout(()=>{b.textContent='复制';b.classList.remove('ok')},1500)}
+function dlImg(url,filename){const a=document.createElement('a');a.href=url+'?dl=1';a.download=filename;a.click()}
+function delCard(key,el){
+  const btn=el.closest('.del-btn');
+  if(!btn.dataset.confirm){
+    btn.dataset.confirm='1';
+    btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 确认删除？';
+    btn.style.color='#ef4444';btn.style.borderColor='#ef4444';btn.style.background='#fef2f2';
+    setTimeout(()=>{delete btn.dataset.confirm;btn.innerHTML='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 删除';btn.style.cssText=''},3000);
+    return;
+  }
+  fetch('/i/'+key,{method:'DELETE'}).then(()=>{
+    const card=btn.closest('.r-item');
+    card.style.opacity='0';card.style.transform='scale(0.95)';
+    setTimeout(()=>card.remove(),300);
+  }).catch(()=>alert('删除失败'));
+}
+
+// 事件委托：下载按钮 + 删除按钮
+document.addEventListener('click',function(e){
+  const dlBtn=e.target.closest('.dl-preview,.dl-btn');
+  if(dlBtn&&dlBtn.dataset.dlUrl){e.stopPropagation();dlImg(dlBtn.dataset.dlUrl,dlBtn.dataset.dlKey);return}
+  const delBtn=e.target.closest('.del-btn');
+  if(delBtn&&delBtn.dataset.delKey){e.stopPropagation();delCard(delBtn.dataset.delKey,delBtn)}
+});
+
+function showLB(src,isVid){
+  const img=$('#lbImg'),vid=$('#lbVid');
+  if(isVid){img.style.display='none';vid.style.display='';vid.src=src}
+  else{vid.style.display='none';img.style.display='';img.src=src}
+  $('#lb').classList.add('show');
+}
+$('#lb').addEventListener('click',function(e){if(e.target===this){this.classList.remove('show');$('#lbVid').pause()}});
+
+async function loadRecent(){
+  try{
+    const r=await fetch('/recent');
+    if(!r.ok){$('#recentCard').style.display='none';return}
+    const d=await r.json();
+    if(d.files?.length){
+      $('#recentCard').style.display='';
+      $('#thumbs').innerHTML=d.files.slice(0,20).map(f=>{
+        const isV=f.key.match(/\.(mp4|webm)$/i);
+        const thumb=isV?'<video src="'+f.url+'" muted></video>':'<img src="'+f.url+'" loading="lazy">';
+        const lbCall=isV?'showLB(\''+f.url+'\',true)':'showLB(\''+f.url+'\')';
+        return '<div class="thumb" title="'+f.key+'" ondblclick="'+lbCall+'">'+thumb+'<div class="overlay">'+
+          '<button class="ov-prev" onclick="event.stopPropagation();'+lbCall+'">👁</button>'+
+          '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\''+f.url+'\');this.textContent=\'✓\';setTimeout(()=>this.textContent=\'📋\',800)">📋</button>'+
+        '</div></div>';
+      }).join('');
+    }else{$('#recentCard').style.display='none'}
+  }catch(e){$('#recentCard').style.display='none'}
+}
+
+async function delImg(key,el){if(!confirm('确认删除 '+key+' ?'))return;try{await fetch('/i/'+key,{method:'DELETE'});el.style.opacity='0';setTimeout(()=>el.remove(),300)}catch(e){}}
+
+async function loadStats(){try{const r=await fetch('/stats');const d=await r.json();$('#sTotal').textContent=d.total||0;$('#sToday').textContent=d.today||0;$('#sSize').textContent=d.sizeStr||'0B';document.getElementById('sTransform').textContent=d.transformUsed!==undefined?d.transformUsed+'/'+d.transformLimit:'-'}catch(e){}}
+
+// JSZip CDN
+const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';document.head.appendChild(s);
+
+loadRecent();loadStats();
+</script>
+</body>
+</html>

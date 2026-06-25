@@ -5,6 +5,18 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+    const o = request.headers.get('Origin') || '*';
+
+    // OPTIONS 预检请求（显式处理，不依赖 Worker 内逻辑）
+    if (request.method === 'OPTIONS') {
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': o,
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Origin, Accept',
+        'Access-Control-Max-Age': '86400'
+      };
+      return new Response(null, { status: 204, headers: corsHeaders });
+    }
 
     // 页面路由（从 R2 读取 HTML）
     if (path === '/' || path === '') return servePage(env, '__page_page', cors(url.origin));
@@ -29,8 +41,7 @@ export default {
       }, { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // CORS
-    const o = request.headers.get('Origin') || '*';
+    // CORS（已在顶部声明 o）
 
     if (path === '/test-r2') {
       try {
@@ -190,7 +201,7 @@ export default {
           protected: !!password
         }, { headers: cors(o) });
       } catch (e) {
-        return Response.json({ error: e.message }, { status: 500, headers: cors(o) });
+        return Response.json({ error: e.message || String(e), stack: e.stack?.split('\\n').slice(0,3).join(' | ') || '' }, { status: 500, headers: cors(o) });
       }
     }
 
