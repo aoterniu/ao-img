@@ -12,6 +12,23 @@ export default {
     if (path === '/manage') return servePage(env, '__page_manage', cors(url.origin));
     if (path === '/api') return servePage(env, '__page_api', cors(url.origin));
 
+    // PWA manifest
+    if (path === '/manifest.json') {
+      return Response.json({
+        name: 'ao 图床',
+        short_name: 'ao图床',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#f5f7fa',
+        theme_color: '#10b981',
+        icons: [{
+          src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%2310b981"/><text x="50" y="65" font-size="40" font-weight="bold" text-anchor="middle" fill="white">ao</text></svg>',
+          sizes: '192x192',
+          type: 'image/svg+xml'
+        }]
+      }, { headers: { 'Content-Type': 'application/json' } });
+    }
+
     // CORS
     const o = request.headers.get('Origin') || '*';
 

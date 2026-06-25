@@ -547,7 +547,7 @@ async function loadRecent(){
 
 async function delImg(key,el){if(!confirm('确认删除 '+key+' ?'))return;try{await fetch('/i/'+key,{method:'DELETE'});el.style.opacity='0';setTimeout(()=>el.remove(),300)}catch(e){}}
 
-async function loadStats(){try{const r=await fetch('/stats');const d=await r.json();$('#sTotal').textContent=d.total||0;$('#sToday').textContent=d.today||0;$('#sSize').textContent=d.sizeStr||'0B'}catch(e){}}
+async function loadStats(){try{const r=await fetch('/stats');const d=await r.json();$('#sTotal').textContent=d.total||0;$('#sToday').textContent=d.today||0;$('#sSize').textContent=d.sizeStr||'0B';document.getElementById('sTransform').textContent=d.transformUsed!==undefined?d.transformUsed+'/'+d.transformLimit:'-'}catch(e){}}
 
 // JSZip CDN
 const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';document.head.appendChild(s);
