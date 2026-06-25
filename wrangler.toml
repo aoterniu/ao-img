@@ -19,3 +19,8 @@ id = "ff82df4e39aa43eba3c7006d32a7fd61"
 binding = "META"
 database_name = "ao-img-meta"
 database_id = "141d7b93-6d41-49e8-b8de-60daa0eb259e"
+
+[images]
+binding = "IMAGES"
+
+
