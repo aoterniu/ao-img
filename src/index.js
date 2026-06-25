@@ -154,7 +154,11 @@ export default {
 
           origName = fileUrl.split('/').pop().split('?')[0] || 'image.jpg';
           sz = parseInt(resp.headers.get('Content-Length') || '0');
-          f = { stream: () => resp.body, type: ct, name: origName, size: sz };
+
+          // 读取到内存（避免 R2 要求 known length 的问题）
+          const remoteBuf = await resp.arrayBuffer();
+          sz = remoteBuf.byteLength;
+          f = { stream: () => new Uint8Array(remoteBuf), type: ct, name: origName, size: sz };
         } else {
           // 文件上传模式
           const fd = await request.formData();
