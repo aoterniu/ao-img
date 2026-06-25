@@ -164,13 +164,13 @@ export default {
           sz = f.size || 0;
         }
 
-        const ext = origName ? '.' + origName.split('.').pop() : '.png';
-        const key = randKey(ext);
+        const ext = origName ? origName.split('.').pop() : 'png';
+        const key = randKey(''); // 不带扩展名，避免 Cloudflare 拦截
         const ct = format === 'webp' ? 'image/webp' : format === 'png' ? 'image/png' : format === 'jpg' ? 'image/jpeg' : f.type || 'image/png';
 
         await env.IMG.put(key, f.stream(), {
           httpMetadata: { contentType: ct, cacheControl: 'public, max-age=31536000, immutable' },
-          customMetadata: { originalName: origName, uploadedAt: new Date().toISOString(), format, protected: password ? 'true' : '' }
+          customMetadata: { originalName: origName, originalExt: ext, uploadedAt: new Date().toISOString(), format, protected: password ? 'true' : '' }
         });
 
         await updateStats(env, sz);
@@ -187,15 +187,19 @@ export default {
       }
     }
 
-    // 最近上传（不带扩展名的 URL，避免 Cloudflare 拦截）
+    // 最近上传（URL 不带扩展名，避免 Cloudflare 拦截）
     if (path.startsWith('/recent')) {
       try {
         const l = await env.IMG.list({ limit: 20 });
-        const files = l.objects.filter(o => !o.key.startsWith('__')).map(o => ({
-          key: o.key, url: url.origin + '/i/' + o.key, size: o.size,
-          uploaded: o.customMetadata?.uploadedAt || o.uploaded,
-          protected: !!o.customMetadata?.password
-        }));
+        const files = l.objects.filter(o => !o.key.startsWith('__')).map(o => {
+          // 去掉扩展名生成 URL（旧图片 key 带扩展名，新图片不带）
+          const cleanKey = o.key.replace(/\.[^.]+$/, '');
+          return {
+            key: o.key, url: url.origin + '/i/' + cleanKey, size: o.size,
+            uploaded: o.customMetadata?.uploadedAt || o.uploaded,
+            protected: !!o.customMetadata?.password
+          };
+        });
         return Response.json({ files }, { headers: cors(o) });
       } catch (e) { return Response.json({ files: [] }); }
     }
