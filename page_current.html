@@ -469,7 +469,7 @@ function card(d){
     ?'<div class="preview-wrap"><video class="preview" src="'+d.url+'" muted style="cursor:pointer" onclick="showLB(this.src,true)"></video><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>'
     :'<div class="preview-wrap"><img class="preview" src="'+displayUrl+'" onclick="showLB(this.src)"><button class="dl-preview" data-dl-url="'+d.url+'" data-dl-key="'+d.key+'" title="下载"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>';
   const md=isVideo?'[video]('+d.url+')':'![]('+displayUrl+')';
-  const html=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+displayUrl+'" alt="'+d.key+'">';
+  const htmlCode=isVideo?'<video src="'+d.url+'" controls></video>':'<img src="'+displayUrl+'" alt="'+d.key+'">';
   const bb=isVideo?'[video]'+d.url+'[/video]':'[IMG]'+displayUrl+'[/IMG]';
   return '<div class="r-item">'+
     '<div class="success">✅ 上传成功</div>'+
@@ -535,10 +535,10 @@ async function loadRecent(){
       $('#thumbs').innerHTML=d.files.slice(0,20).map(f=>{
         const isV=f.key.match(/\.(mp4|webm)$/i);
         const thumb=isV?'<video src="'+f.url+'" muted></video>':'<img src="'+f.url+'" loading="lazy">';
-        const lbCall=isV?'showLB(\\''+f.url+'\\',true)':'showLB(\\''+f.url+'\\')';
+        const lbCall=isV?'showLB(\''+f.url+'\',true)':'showLB(\''+f.url+'\')';
         return '<div class="thumb" title="'+f.key+'" ondblclick="'+lbCall+'">'+thumb+'<div class="overlay">'+
           '<button class="ov-prev" onclick="event.stopPropagation();'+lbCall+'">👁</button>'+
-          '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\\''+f.url+'\\');this.textContent=\\'✓\\';setTimeout(()=>this.textContent=\\'📋\\',800)">📋</button>'+
+          '<button class="ov-copy" onclick="event.stopPropagation();navigator.clipboard.writeText(\''+f.url+'\');this.textContent=\'✓\';setTimeout(()=>this.textContent=\'📋\',800)">📋</button>'+
         '</div></div>';
       }).join('');
     }else{$('#recentCard').style.display='none'}

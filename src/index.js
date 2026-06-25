@@ -126,6 +126,67 @@ export default {
       } catch (e) { return Response.json({ total: 0 }); }
     }
 
+    // 上传接口（支持文件上传和 URL 上传）
+    if (url.pathname === '/upload' && request.method === 'POST') {
+      try {
+        const contentType = request.headers.get('Content-Type') || '';
+        let f, origName = '', sz = 0, format = 'original', quality = '100', password = '';
+
+        if (contentType.includes('application/json')) {
+          // URL 上传模式
+          const body = await request.json();
+          const fileUrl = body.url;
+          format = body.format || 'original';
+          quality = body.quality || '100';
+          password = body.password || '';
+          if (!fileUrl) return Response.json({ error: '请提供图片 URL' }, { status: 400, headers: cors(o) });
+
+          // 下载远程文件
+          const resp = await fetch(fileUrl, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0' } });
+          if (!resp.ok) return Response.json({ error: '下载失败：' + resp.status }, { status: 400, headers: cors(o) });
+
+          const ct = resp.headers.get('Content-Type') || '';
+          if (!ct.startsWith('image/') && !ct.startsWith('video/'))
+            return Response.json({ error: 'URL 不是图片或视频' }, { status: 400, headers: cors(o) });
+
+          origName = fileUrl.split('/').pop().split('?')[0] || 'image.jpg';
+          sz = parseInt(resp.headers.get('Content-Length') || '0');
+          f = { stream: () => resp.body, type: ct, name: origName, size: sz };
+        } else {
+          // 文件上传模式
+          const fd = await request.formData();
+          f = fd.get('file');
+          format = fd.get('format') || 'original';
+          quality = fd.get('quality') || '100';
+          password = fd.get('password') || '';
+          if (!f) return Response.json({ error: '请选择文件' }, { status: 400, headers: cors(o) });
+          origName = f.name || '';
+          sz = f.size || 0;
+        }
+
+        const ext = origName ? '.' + origName.split('.').pop() : '.png';
+        const key = randKey(ext);
+        const ct = format === 'webp' ? 'image/webp' : format === 'png' ? 'image/png' : format === 'jpg' ? 'image/jpeg' : f.type || 'image/png';
+
+        await env.IMG.put(key, f.stream(), {
+          httpMetadata: { contentType: ct, cacheControl: 'public, max-age=31536000, immutable' },
+          customMetadata: { originalName: origName, uploadedAt: new Date().toISOString(), format, protected: password ? 'true' : '' }
+        });
+
+        await updateStats(env, sz);
+
+        return Response.json({
+          url: url.origin + '/i/' + key,
+          key,
+          size: sz,
+          originalName: origName,
+          protected: !!password
+        }, { headers: cors(o) });
+      } catch (e) {
+        return Response.json({ error: e.message }, { status: 500, headers: cors(o) });
+      }
+    }
+
     // 最近上传（不带扩展名的 URL，避免 Cloudflare 拦截）
     if (path.startsWith('/recent')) {
       try {
@@ -146,6 +207,27 @@ export default {
 // 辅助函数
 function cors(origin) {
   return { 'Access-Control-Allow-Origin': origin || '*', 'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+}
+
+function randKey(ext) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let id = '';
+  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id + ext;
+}
+
+async function updateStats(env, size) {
+  try {
+    const t = parseInt(await env.STATS.get('total') || '0') + 1;
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = parseInt(await env.STATS.get('day_' + today) || '0') + 1;
+    const totalSize = parseInt(await env.STATS.get('totalSize') || '0') + size;
+    await Promise.all([
+      env.STATS.put('total', String(t)),
+      env.STATS.put('day_' + today, String(todayCount)),
+      env.STATS.put('totalSize', String(totalSize))
+    ]);
+  } catch (e) {}
 }
 
 async function servePage(env, key, corsHeaders) {
