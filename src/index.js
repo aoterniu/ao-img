@@ -67,6 +67,9 @@ export default {
         const obj = await env.IMG.get(actualKey);
         if (!obj) return new Response('Not Found', { status: 404 });
 
+        // 先读取整个 body 到内存（避免 body 被多次消费）
+        const buf = await obj.arrayBuffer();
+
         // 格式转换配额检查
         const format = url.searchParams.get('format');
         if (format) {
@@ -85,11 +88,12 @@ export default {
             const formatMap = {'webp':'image/webp','png':'image/png','jpg':'image/jpeg','jpeg':'image/jpeg','avif':'image/avif'};
             const mimeType = formatMap[format.toLowerCase()] || 'image/webp';
             const result = await env.IMAGES
-              .input(obj.body)
+              .input(buf)
               .transform({ fit: 'scale-down' })
               .output({ format: mimeType });
             const resp = result.response();
-            return new Response(resp.body, {
+            const respBuf = await resp.arrayBuffer();
+            return new Response(respBuf, {
               headers: {
                 'Content-Type': mimeType,
                 'Cache-Control': 'public, max-age=31536000, immutable',
@@ -101,7 +105,6 @@ export default {
           }
         }
 
-        const buf = await obj.arrayBuffer();
         return new Response(buf, {
           headers: {
             'Content-Type': obj.httpMetadata?.contentType || 'image/png',
